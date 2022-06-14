@@ -1,12 +1,24 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param, Redirect, Render } from '@nestjs/common';
 import { AppService } from './app.service';
+import { v4 as uuidv4 } from 'uuid';
 
-@Controller()
+@Controller('')
 export class AppController {
   constructor(private readonly appService: AppService) {}
-
+  
   @Get()
+  @Redirect(`/${uuidv4()}`, 302)
   getHello(): string {
-    return this.appService.getHello();
+    return ;
   }
+
+  @Get('/:room')
+  @Render('room.ejs')
+  getRoomId(@Param('room') roomId): any {
+    return {
+      roomId: roomId,
+      devmode: process.env.DEVMODE
+    }
+  }
+
 }

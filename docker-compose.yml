@@ -1,0 +1,22 @@
+version: "3.7"
+services:
+  db:
+    image: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: test_db
+    ports: 
+      - '4321:5432'
+
+  socket_test:
+    image: antangle/socket_test
+    depends_on:
+      - db
+    ports:
+      - '80:3000'
+    volumes:
+      - /usr/app/node_modules
+
+volumes:
+  db:
