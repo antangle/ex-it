@@ -5,7 +5,9 @@ import { AppService } from './app.service';
 import { MyTypeormModule } from './config/typeorm.module';
 
 @Module({ 
-  //imports: [MyTypeormModule],
+  imports: [
+    MyTypeormModule
+  ],
   controllers: [AppController],
   providers: [
     AppService,

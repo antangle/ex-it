@@ -11,37 +11,48 @@ import { ExpressPeerServer } from 'peer';
 import * as fs from 'fs';
 dotenv.config();
 async function bootstrap() {
-  
-  let httpsOptions;
-  if(process.env.DEVMODE == 'DEVELOPMENT'){
-    httpsOptions = {
-      key: fs.readFileSync(path.join(__dirname, '/../cert/key.pem')),
-      cert: fs.readFileSync(path.join(__dirname ,'/../cert/cert.pem'))
-    }
+  const devmode = process.env.DEVMODE;
+
+
+  //for localhost ssl config, not used in production!!
+  let httpsOptions = {
+    key: fs.readFileSync(path.join(__dirname, '..', '/static/cert/key.pem')),
+    cert: fs.readFileSync(path.join(__dirname ,'..', '/static/cert/cert.pem'))
   }
   
   const server = express();
-
+  
   const app = await NestFactory.create<NestExpressApplication>(
     AppModule, 
     new ExpressAdapter(server)  
   );
-
-  const httpsServer = https.createServer(httpsOptions, server);
-  const httpServer = http.createServer(server);
+  
   //cors
   app.enableCors();
 
   //ejs configuration
-  app.useStaticAssets(path.join(__dirname, '..', 'src', 'public'));
-  app.setBaseViewsDir(path.join(__dirname, '..', 'src', 'views'));
+  app.useStaticAssets(path.join(__dirname, '..', '/static/public'));
+  app.setBaseViewsDir(path.join(__dirname, '..', '/static/views'));
   app.setViewEngine("ejs");
   
+  const httpServer = http.createServer(server);
+
+  //for localhost ssl config, not used in production!!
+  let webSocketServer;
+
+  if(devmode == 'DEVELOPMENT'){
+    webSocketServer = https.createServer(httpsOptions, server);
+  }
+  else{
+    //in production, ALB takes care of ssl then forwards to http.
+    webSocketServer = http.createServer(server);
+  }
+
   //socket.io configuration 
-  app.useWebSocketAdapter(new SocketIoAdapter(httpsServer));
-  
+  app.useWebSocketAdapter(new SocketIoAdapter(webSocketServer));
+
   await app.init();
-  
+
   const peerServer = ExpressPeerServer(httpServer);
 
   peerServer.on('connection', (client) => {
@@ -49,11 +60,12 @@ async function bootstrap() {
   })
 
   app.use('/peerjs', peerServer);
-
-  httpServer.listen(3000);
-  httpsServer.listen(3001);
   
-  console.log(`server starting on port: ${process.env.PORT}`);
+  httpServer.listen(process.env.PORT);
+  webSocketServer.listen(process.env.WEBSOCKET_PORT);
+
+  console.log(devmode);
+  console.log(`server starting on port: ${process.env.PORT}, websocket port:${process.env.WEBSOCKET_PORT}`);
 }
 
 bootstrap();

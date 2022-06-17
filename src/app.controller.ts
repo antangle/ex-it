@@ -5,7 +5,12 @@ import { v4 as uuidv4 } from 'uuid';
 @Controller('')
 export class AppController {
   constructor(private readonly appService: AppService) {}
-  
+
+  @Get('/health')
+  healthCheck(): string {
+    return 'healthy';
+  }
+
   @Get()
   @Redirect(`/${uuidv4()}`, 302)
   getHello(): string {
@@ -17,8 +22,8 @@ export class AppController {
   getRoomId(@Param('room') roomId): any {
     return {
       roomId: roomId,
-      devmode: process.env.DEVMODE
+      devmode: process.env.DEVMODE,
+      websocketPort: process.env.WEBSOCKET_PORT,
     }
   }
-
 }

@@ -11,25 +11,25 @@ services:
     ports: 
       - '5432:5432'
     volumes:
-      - ./pgdata:/var/lib/postgresql/data
-
+      - pgdata:/var/lib/postgresql/data
+  
   exit_server:
     build:
       context: .
-      dockerfile: Dockerfile.prod
-    image: antangle/exit_server:production
+      dockerfile: Dockerfile.dev
     depends_on:
       - db
     ports:
       - '80:3000'
+      - '443:3000'
       - '3001:3001'
+    environment:
+      - DEVMODE=DEVELOPMENT
+    restart: always
     env_file:
       - .env
-    environment:
-      - DEVMODE=PRODUCTION
-    restart: always
     volumes:
-      - /app/node_modules
-
+      - ./:/app/dev
+      - /app/dev/node_modules
 volumes:
   pgdata:

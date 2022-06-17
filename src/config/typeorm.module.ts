@@ -17,18 +17,18 @@ dotenv.config({path: path.join(__dirname,'../../.env')});
             logging: true,   
             migrationsRun: false,
             entities: [
-                'dist/entity/*.{ts,js}'
+                path.join(__dirname, '/dist/*.entity.js')
             ],
             migrations: [
-                "dist/migration/*.{ts,js}"
+                path.join(__dirname, '/dist/*.migration.js')
             ],
             subscribers: [
-                "dist/subscriber/*.{ts,js}"
+                path.join(__dirname, '/dist/*.subscriber.js')
             ],
             cli: {
-                "entitiesDir": "src/entity",
-                "migrationsDir": "src/migration",
-                "subscribersDir": "src/subscriber"
+                "entitiesDir": __dirname + "src/entities",
+                "migrationsDir": __dirname + "src/migrations",
+                "subscribersDir": __dirname + "src/subscribers"
             }
         })
     ]

@@ -1,6 +1,5 @@
 /node_modules
+/test
+/postgres
 .git
 .gitignore
-/dist
-/src
-/cert

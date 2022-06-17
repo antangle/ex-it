@@ -1,12 +1,8 @@
 import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 
+//let origin = process.env.DEVMODE == 'DEVELOPMENT' ? `https://localhost` : `https://ex-it.app`;
 @WebSocketGateway({
-    cors: { 
-        origin: "https://localhost:3001", 
-        methods: ["GET", "POST"], 
-        credentials: true 
-    },
     transports: ['websocket', 'polling'], 
     allowEIO3: true 
 })
