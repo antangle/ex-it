@@ -6,8 +6,8 @@ export class Review {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @Column()
-    user?: User
+    // @Column()
+    // user?: User
 
     @Column()
     title?: string

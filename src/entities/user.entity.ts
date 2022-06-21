@@ -7,11 +7,11 @@ export class User {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @Column()
-    setting?: Setting
+    // @Column()
+    // setting?: Setting
 
-    @Column()
-    auth?: Auth
+    // @Column()
+    // auth?: Auth
 
     @Column()
     email?: string;
@@ -28,9 +28,7 @@ export class User {
     @Column()
     phone?: string;
 
-    @Column({
-        type: 'datetime'
-    })
+    @Column()
     birth?: string;
 
     @Column()

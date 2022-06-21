@@ -7,11 +7,11 @@ export class Auth {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @Column()
-    user?: User
+    // @Column()
+    // user?: User
 
-    @Column()
-    settings?: Setting
+    // @Column()
+    // settings?: Setting
 
     @Column()
     type?: string

@@ -2,7 +2,7 @@ var localVideo = document.getElementById('local-video');
 var remoteVideo = document.getElementById('remote-video');
 
 //init socket & peer
-let HOST = devmode == 'DEVELOPMENT' ? 'localhost' : 'ex-it.app';
+let HOST = devmode == 'dev' ? 'localhost' : 'ex-it.app';
 let url = `https://${HOST}:${websocketPort}`;
 let socket = io(url, {transports:['websocket', 'polling']});
 let peer;

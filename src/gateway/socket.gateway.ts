@@ -1,7 +1,7 @@
 import { Server, Socket } from 'socket.io';
 import { ConnectedSocket, MessageBody, OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit, SubscribeMessage, WebSocketGateway, WebSocketServer } from "@nestjs/websockets";
 
-//let origin = process.env.DEVMODE == 'DEVELOPMENT' ? `https://localhost` : `https://ex-it.app`;
+//let origin = process.env.DEVMODE == 'dev' ? `https://localhost` : `https://ex-it.app`;
 @WebSocketGateway({
     transports: ['websocket', 'polling'], 
     allowEIO3: true 

@@ -6,8 +6,8 @@ export class Reply {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @Column()
-    inquiry?: Inquiry
+    // @Column()
+    // inquiry?: Inquiry
 
     @Column()
     title?: string

@@ -7,9 +7,9 @@ export class RoomTag {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @Column()
-    tag?: Tag;
+    // @Column()
+    // tag?: Tag;
 
-    @Column()
-    room?: Room;
+    // @Column()
+    // room?: Room;
 }

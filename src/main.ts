@@ -1,18 +1,16 @@
 import { SocketIoAdapter } from './gateway/adapter';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
-import * as express from 'express';
+import express from 'express';
 import * as http from 'http';
 import * as https from 'https';
-import * as dotenv from 'dotenv';
 import * as path from 'path';
 import { ExpressAdapter, NestExpressApplication } from '@nestjs/platform-express';
 import { ExpressPeerServer } from 'peer';
 import * as fs from 'fs';
-dotenv.config();
+
 async function bootstrap() {
   const devmode = process.env.DEVMODE;
-
 
   //for localhost ssl config, not used in production!!
   let httpsOptions = {
@@ -40,7 +38,7 @@ async function bootstrap() {
   //for localhost ssl config, not used in production!!
   let webSocketServer;
 
-  if(devmode == 'DEVELOPMENT'){
+  if(devmode == 'dev'){
     webSocketServer = https.createServer(httpsOptions, server);
   }
   else{
@@ -53,6 +51,7 @@ async function bootstrap() {
 
   await app.init();
 
+  //peerjs server
   const peerServer = ExpressPeerServer(httpServer);
 
   peerServer.on('connection', (client) => {
@@ -61,6 +60,7 @@ async function bootstrap() {
 
   app.use('/peerjs', peerServer);
   
+  //listen to ports
   httpServer.listen(process.env.PORT);
   webSocketServer.listen(process.env.WEBSOCKET_PORT);
 

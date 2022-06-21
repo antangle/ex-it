@@ -7,9 +7,9 @@ export class RoomJoin {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @Column()
-    room_id?: Room;
+    // @Column()
+    // room_id?: Room;
 
-    @Column()
-    user_id?: User;
+    // @Column()
+    // user_id?: User;
 }

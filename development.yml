@@ -1,7 +1,8 @@
 version: "3.7"
 services:
-  db:
+  pgdb:
     image: postgres
+    container_name: exitDB
     env_file:
       - .env
     environment:
@@ -9,7 +10,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     ports: 
-      - '5432:5432'
+      - '4321:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
   
@@ -17,19 +18,20 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.dev
+    image: antangle/exit_server:development
     depends_on:
-      - db
+      - pgdb
     ports:
       - '80:3000'
       - '443:3000'
       - '3001:3001'
     environment:
-      - DEVMODE=DEVELOPMENT
+      - DEVMODE=dev
     restart: always
     env_file:
       - .env
     volumes:
-      - ./:/app/dev
-      - /app/dev/node_modules
+      - ./:/app
+      - /app/node_modules
 volumes:
   pgdata:

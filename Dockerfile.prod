@@ -6,9 +6,11 @@ COPY package*.json ./
 
 RUN npm install
 
+COPY . ./
+
 RUN npm install nodemon -g
 
-COPY . ./
+RUN npm install cross-env -g
 
 RUN npm run build
 

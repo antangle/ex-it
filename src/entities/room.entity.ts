@@ -6,8 +6,8 @@ export class Room {
   @PrimaryGeneratedColumn()
   id?: number;
   
-  @Column()
-  create_user_id?: User
+  // @Column()
+  // create_user_id?: User
 
   @Column()
   username?: string;
@@ -24,9 +24,7 @@ export class Room {
   @Column()
   communication?: string;
   
-  @Column({
-    type: 'datetime'
-  })
+  @Column()
   hardcore?: boolean;
 
   @CreateDateColumn()
