@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Reply } from './reply.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity()
@@ -6,15 +7,18 @@ export class Inquiry {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    // @Column()
-    // user?: User
+    @ManyToOne(() => User)
+    user?: User;
+
+    @OneToOne(() => Reply, reply => reply.inquiry)
+    reply: Reply;
 
     @Column()
-    title?: string
+    title?: string;
 
     @Column()
-    content?: string
+    content?: string;
 
     @Column()
-    type?: string
+    type?: string;
 }

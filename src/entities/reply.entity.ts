@@ -1,20 +1,20 @@
 import { Inquiry } from './inquiry.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
 
 @Entity()
 export class Reply {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    // @Column()
-    // inquiry?: Inquiry
+    @OneToOne(() => Inquiry, inquiry => inquiry.reply)
+    inquiry?: Inquiry;
 
     @Column()
-    title?: string
+    title?: string;
 
     @Column()
-    content?: string
+    content?: string;
 
     @Column()
-    type?: string
+    type?: string;
 }

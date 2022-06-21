@@ -29,6 +29,11 @@ export class TestService {
   }
 
   remove(id: number) {
-    return this.testRepository.softDelete(id);
+    const softDeleteDto: UpdateTestDto = {
+      name: "",
+      age: 0
+    }
+
+    return this.testRepository.update(id, softDeleteDto);
   }
 }

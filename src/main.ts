@@ -8,6 +8,7 @@ import * as path from 'path';
 import { ExpressAdapter, NestExpressApplication } from '@nestjs/platform-express';
 import { ExpressPeerServer } from 'peer';
 import * as fs from 'fs';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const devmode = process.env.DEVMODE;
@@ -27,6 +28,18 @@ async function bootstrap() {
   
   //cors
   app.enableCors();
+
+  //pipe
+  /*
+  whitelist: ignore values that are not in entity decorator.
+  transform: auto-transform types caught by controller param
+  */
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      transform: true
+    })
+  )
 
   //ejs configuration
   app.useStaticAssets(path.join(__dirname, '..', '/static/public'));

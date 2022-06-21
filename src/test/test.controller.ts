@@ -18,17 +18,17 @@ export class TestController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.testService.findOne(+id);
+  findOne(@Param('id') id: number) {
+    return this.testService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateTestDto: UpdateTestDto) {
-    return this.testService.update(+id, updateTestDto);
+  update(@Param('id') id: number, @Body() updateTestDto: UpdateTestDto) {
+    return this.testService.update(id, updateTestDto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.testService.remove(+id);
+  remove(@Param('id') id: number) {
+    return this.testService.remove(id);
   }
 }

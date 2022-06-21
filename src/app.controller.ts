@@ -11,13 +11,13 @@ export class AppController {
     return 'healthy';
   }
 
-  @Get()
-  @Redirect(`/${uuidv4()}`, 302)
+  @Get('comm')
+  @Redirect(`/comm/${uuidv4()}`, 302)
   getHello(): string {
     return ;
   }
 
-  @Get('/:room')
+  @Get('/comm/:room')
   @Render('room.ejs')
   getRoomId(@Param('room') roomId): any {
     return {

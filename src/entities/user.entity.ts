@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { RoomJoin } from './roomJoin.entity';
+import { Inquiry } from './inquiry.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToOne, OneToMany } from 'typeorm';
 import { Auth } from './auth.entity';
 import { Setting } from './setting.entity';
 
@@ -7,11 +9,16 @@ export class User {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    // @Column()
-    // setting?: Setting
+    @OneToOne(() => Setting, (setting) => setting.user)
+    @JoinColumn()
+    setting?: Setting;
+    
+    @OneToOne(() => Auth, auth => auth.user)
+    @JoinColumn()
+    auth?: Auth;
 
-    // @Column()
-    // auth?: Auth
+    @OneToMany(() => Inquiry, inquiry => inquiry.user)
+    inquiry?: Inquiry[];
 
     @Column()
     email?: string;

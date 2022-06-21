@@ -1,4 +1,6 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { RoomTag } from './roomTag.entity';
+import { RoomJoin } from './roomJoin.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinTable, ManyToOne, OneToMany } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity()
@@ -6,8 +8,14 @@ export class Room {
   @PrimaryGeneratedColumn()
   id?: number;
   
-  // @Column()
-  // create_user_id?: User
+  @ManyToOne(() => User)
+  create_user?: User
+
+  @OneToMany(() => RoomJoin, roomJoin => roomJoin.room)
+  roomJoin?: RoomJoin;
+
+  @OneToMany(() => RoomTag, roomTag => roomTag.room)
+  roomTag?: RoomTag;
 
   @Column()
   username?: string;

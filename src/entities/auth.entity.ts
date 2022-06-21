@@ -1,5 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
-import { Setting } from './setting.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity()
@@ -7,11 +6,8 @@ export class Auth {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    // @Column()
-    // user?: User
-
-    // @Column()
-    // settings?: Setting
+    @OneToOne(() => User, (user) => user.auth)
+    user?: User
 
     @Column()
     type?: string

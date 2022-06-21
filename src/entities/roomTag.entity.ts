@@ -1,15 +1,21 @@
 import { Tag } from './tag.entity';
 import { Room } from './room.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 
 @Entity()
 export class RoomTag {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    // @Column()
-    // tag?: Tag;
+    @Column()
+    roomId!: number;
 
-    // @Column()
-    // room?: Room;
+    @Column()
+    tagId!: number;
+
+    @ManyToOne(() => Room, room => room.roomTag)
+    room?: Room;
+    
+    @ManyToOne(() => Tag, tag => tag.roomTag)
+    tag?: Tag;
 }

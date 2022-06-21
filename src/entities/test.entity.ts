@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { TestRelation } from './relation.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
 
 @Entity()
 export class TestTable {
@@ -7,4 +8,11 @@ export class TestTable {
 
     @Column()
     name?: string;
+
+    @Column()
+    age?: number;
+
+    @OneToOne(() => TestRelation, testRelation => testRelation.testTable)
+    @JoinColumn()
+    testRelation: TestRelation;
 }

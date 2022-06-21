@@ -1,4 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
 import { Room } from './room.entity';
 import { User } from './user.entity';
 
@@ -7,9 +7,15 @@ export class RoomJoin {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    // @Column()
-    // room_id?: Room;
+    @Column()
+    roomId!: number;
 
-    // @Column()
-    // user_id?: User;
+    @Column()
+    userId!: number;
+
+    @ManyToOne(() => Room, room => room.roomJoin)
+    room?: Room;
+    
+    @ManyToOne(() => User)
+    user?: User;
 }

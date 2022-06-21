@@ -1,4 +1,5 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn } from 'typeorm';
+import { RoomTag } from './roomTag.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
 import { Room } from './room.entity';
 import { User } from './user.entity';
 
@@ -10,6 +11,9 @@ export class Tag {
     @Column()
     name?: string;
 
+    @OneToMany(() => RoomTag, roomTag => roomTag.tag)
+    roomTag?: RoomTag;
+  
     @Column()
     is_popular?: boolean;
 }
