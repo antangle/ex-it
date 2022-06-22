@@ -7,6 +7,7 @@ import { MyTypeormModule } from './config/typeorm.module';
 import { UserController } from './user/user.controller';
 import { UserModule } from './user/user.module';
 import { TestModule } from './test/test.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({ 
   imports: [
@@ -16,7 +17,8 @@ import { TestModule } from './test/test.module';
     }),
     MyTypeormModule,
     UserModule,
-    TestModule
+    TestModule,
+    AuthModule
   ],
   controllers: [AppController],
   providers: [

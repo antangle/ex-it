@@ -3,7 +3,7 @@ import { RoomJoin } from './roomJoin.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinTable, ManyToOne, OneToMany } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity()
+@Entity({name: 'room'})
 export class Room {
   @PrimaryGeneratedColumn()
   id?: number;

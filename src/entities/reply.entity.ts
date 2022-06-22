@@ -1,7 +1,7 @@
 import { Inquiry } from './inquiry.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne } from 'typeorm';
 
-@Entity()
+@Entity({name: 'reply'})
 export class Reply {
     @PrimaryGeneratedColumn()
     id?: number;

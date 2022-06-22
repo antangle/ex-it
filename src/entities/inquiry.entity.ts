@@ -2,7 +2,7 @@ import { Reply } from './reply.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { User } from './user.entity';
 
-@Entity()
+@Entity({name: 'inquiry'})
 export class Inquiry {
     @PrimaryGeneratedColumn()
     id?: number;

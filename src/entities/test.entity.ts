@@ -1,7 +1,7 @@
 import { TestRelation } from './relation.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
 
-@Entity()
+@Entity({name: 'test_table'})
 export class TestTable {
     @PrimaryGeneratedColumn()
     id?: number;

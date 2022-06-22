@@ -4,7 +4,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { Auth } from './auth.entity';
 import { Setting } from './setting.entity';
 
-@Entity()
+@Entity({name: 'user'})
 export class User {
     @PrimaryGeneratedColumn()
     id?: number;
@@ -28,18 +28,27 @@ export class User {
 
     @Column()
     nickname?: string;
-
-    @Column()
-    name?: string;
-
+    
     @Column()
     phone?: string;
 
-    @Column()
-    birth?: string;
+    // @Column()
+    // name?: string;
+    
+    // @Column()
+    // birth?: string;
+    
+    // @Column()
+    // sex?: string;
+    
+    // @Column()
+    // temp_uuid?: string;
 
-    @Column()
-    sex?: string;
+    // @Column()
+    // token?: string;
+
+    // @Column()
+    // profile_url?: string;
 
     @Column()
     terms?: boolean;
@@ -53,17 +62,9 @@ export class User {
     is_identified?: boolean;
 
     @CreateDateColumn()
-    created_at?: Date
+    created_at?: Date;
 
     @UpdateDateColumn()
-    updated_at?: Date
+    updated_at?: Date;
 
-    @Column()
-    temp_uuid?: string
-
-    @Column()
-    token?: string
-
-    @Column()
-    profile_url?: string
 }

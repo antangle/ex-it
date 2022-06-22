@@ -3,7 +3,7 @@ import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateCol
 import { Room } from './room.entity';
 import { User } from './user.entity';
 
-@Entity()
+@Entity({name: 'tag'})
 export class Tag {
     @PrimaryGeneratedColumn()
     id?: number;

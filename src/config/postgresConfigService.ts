@@ -5,14 +5,15 @@ import path from "path";
 
 @Injectable()
 export class TypeOrmConfig implements TypeOrmOptionsFactory {
+    constructor(private configService: ConfigService) {}
     createTypeOrmOptions(): TypeOrmModuleOptions {
         return {
             type: "postgres",
-            host: process.env.POSTGRES_HOST,
-            port: Number(process.env.POSTGRES_PORT),
-            username: process.env.POSTGRES_USER,
-            password: process.env.POSTGRES_PASSWORD,
-            database: process.env.POSTGRES_DB,
+            host: this.configService.get<string>('POSTGRES_HOST'),
+            port: this.configService.get<number>('POSTGRES_PORT'),
+            username: this.configService.get<string>('POSTGRES_USER'),
+            password: this.configService.get<string>('POSTGRES_PASSWORD'),
+            database: this.configService.get<string>('POSTGRES_DB'),
             synchronize: false,
             logging: true,
             migrationsRun: false,
