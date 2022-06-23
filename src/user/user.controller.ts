@@ -4,23 +4,20 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { randomUUID } from 'crypto';
-import * as bcrypt from 'bcrypt';
+
 @Controller('user')
 export class UserController {
   constructor(
-    private readonly userService: UserService,
-    private readonly configService: ConfigService
-    ) {}
+    private readonly userService: UserService
+  ) {}
 
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
     //apply random uuid for nickname
     createUserDto.nickname = randomUUID();
-    
+
     //bcrypt hashing
-    const rounds: number = this.configService.get<number>('BCRYPT_SALT');
-    const salt: string = await bcrypt.genSalt(+rounds);
-    createUserDto.password = await bcrypt.hash(createUserDto.password, salt);
+    createUserDto.password = await this.userService.hashUserDto(createUserDto.password);
 
     return this.userService.create(createUserDto);
   }

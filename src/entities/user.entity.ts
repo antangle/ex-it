@@ -20,7 +20,9 @@ export class User {
     @OneToMany(() => Inquiry, inquiry => inquiry.user)
     inquiry?: Inquiry[];
 
-    @Column()
+    @Column({
+        unique: true
+    })
     email?: string;
 
     @Column()
@@ -28,7 +30,7 @@ export class User {
 
     @Column()
     nickname?: string;
-    
+
     @Column()
     phone?: string;
 
