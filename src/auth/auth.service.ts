@@ -1,3 +1,4 @@
+import { CreateUserDto } from './../user/dto/create-user.dto';
 import { User } from 'src/entities/user.entity';
 import { UserService } from './../user/user.service';
 import { Injectable } from '@nestjs/common';
@@ -22,7 +23,7 @@ export class AuthService {
         return null;
     }
 
-    async login(user: User){
+    async login(user: User):Promise<Object>{
         const payload = {
             email: user.email,
             nickname: user.nickname
@@ -31,5 +32,14 @@ export class AuthService {
         return {
             access_token: this.jwtService.sign(payload)
         };
+    }
+
+    async checkEmailExists(email: string): Promise<boolean>{
+        const user = await this.userService.findOneByEmail(email);
+        return user != null;
+    }
+
+    async signIn(createUserDto: CreateUserDto){
+        
     }
 }
