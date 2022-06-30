@@ -9,6 +9,7 @@ services:
       POSTGRES_USER: ${POSTGRES_USER}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
+    restart: always
     ports: 
       - '4321:5432'
     volumes:
@@ -28,9 +29,21 @@ services:
       - .env
     environment:
       - DEVMODE=prod
-    restart: always
     volumes:
       - /app/node_modules
 
+
+  redis:
+    image: redis:3
+    hostname: redis
+    container_name: redis
+    command: --port 6379
+    ports:
+      - '6379:6379'
+    volumes: 
+      - cache:/data
+    restart: always
 volumes:
   pgdata:
+  cache:
+    driver: local

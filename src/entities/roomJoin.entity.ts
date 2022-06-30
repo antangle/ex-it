@@ -7,15 +7,19 @@ export class RoomJoin {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @Column()
-    roomId!: number;
-
-    @Column()
-    userId!: number;
-
     @ManyToOne(() => Room, room => room.roomJoin)
     room?: Room;
     
-    @ManyToOne(() => User)
+    @ManyToOne(() => User, user => user.roomJoin)
     user?: User;
+
+    @Column()
+    status: string;
+    
+    @Column()
+    talk_time: number;
+    
+    @Column()
+    call_time: number;
+    
 }

@@ -1,19 +1,20 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn, ManyToOne, Index } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity({name: 'auth'})
+@Index(["email", "type"], { unique: true })
 export class Auth {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @OneToOne(() => User, (user) => user.auth)
+    @ManyToOne(() => User, (user) => user.auth)
     user?: User
 
     @Column()
-    type?: string
+    email?: string
 
     @Column()
-    access_token?: string
+    type?: string
 
     @Column()
     refresh_token?: string

@@ -1,6 +1,7 @@
+import { Review } from './review.entity';
 import { RoomJoin } from './roomJoin.entity';
 import { Inquiry } from './inquiry.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToOne, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToOne, OneToMany, Index } from 'typeorm';
 import { Auth } from './auth.entity';
 import { Setting } from './setting.entity';
 
@@ -13,26 +14,43 @@ export class User {
     @JoinColumn()
     setting?: Setting;
     
-    @OneToOne(() => Auth, auth => auth.user)
-    @JoinColumn()
-    auth?: Auth;
+    @OneToMany(() => Auth, auth => auth.user)
+    auth?: Auth[];
 
     @OneToMany(() => Inquiry, inquiry => inquiry.user)
     inquiry?: Inquiry[];
 
+    @OneToMany(() => Review, review => review.user)
+    review?: Review[];
+
+    @OneToMany(() => RoomJoin, roomJoin => roomJoin.user)
+    roomJoin?: RoomJoin[];
+
+    @Index({
+        unique: true
+    })
+    @Column()
+    email?: string;
+    
+    @Column({
+        nullable: true
+    })
+    password?: string;
+    
     @Column({
         unique: true
     })
-    email?: string;
-
-    @Column()
-    password?: string;
-
-    @Column()
     nickname?: string;
-
-    @Column()
+    
+    @Column({
+        nullable: true
+    })
     phone?: string;
+    
+    @Column({
+        nullable: true
+    })
+    refresh_token?: string;
 
     // @Column()
     // name?: string;
@@ -46,8 +64,6 @@ export class User {
     // @Column()
     // temp_uuid?: string;
 
-    // @Column()
-    // token?: string;
 
     // @Column()
     // profile_url?: string;
@@ -69,4 +85,8 @@ export class User {
     @UpdateDateColumn()
     updated_at?: Date;
 
+    @Column({
+        nullable: true
+    })
+    is_authenticated?: boolean;
 }

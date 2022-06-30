@@ -1,6 +1,6 @@
 import { RoomTag } from './roomTag.entity';
 import { RoomJoin } from './roomJoin.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinTable, ManyToOne, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinTable, ManyToOne, OneToMany, DeleteDateColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity({name: 'room'})
@@ -14,8 +14,12 @@ export class Room {
   @OneToMany(() => RoomJoin, roomJoin => roomJoin.room)
   roomJoin?: RoomJoin;
 
+
   @OneToMany(() => RoomTag, roomTag => roomTag.room)
   roomTag?: RoomTag;
+  
+  @Column()
+  title: String;
 
   @Column()
   username?: string;
@@ -39,5 +43,5 @@ export class Room {
   created_at?: Date;
 
   @Column()
-  observer?: boolean;
+  observer?: number;
 }

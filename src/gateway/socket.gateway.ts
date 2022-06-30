@@ -24,8 +24,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @ConnectedSocket() socket: Socket, 
         @MessageBody() data: {roomId: string, userId: string},
     ): void {
-        const roomId: string = data.roomId;
-        const userId: string = data.userId;
+        const {roomId, userId} = data;
         console.log(`joined room!\nroomId: ${roomId}\nuserId: ${userId}`);
         socket.join(roomId);
         socket.to(roomId).emit('user-connected', userId);
