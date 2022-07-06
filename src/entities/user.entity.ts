@@ -1,7 +1,8 @@
+import { Alarm } from './alarm.entity';
 import { Review } from './review.entity';
 import { RoomJoin } from './roomJoin.entity';
 import { Inquiry } from './inquiry.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToOne, OneToMany, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToOne, OneToMany, Index, DeleteDateColumn } from 'typeorm';
 import { Auth } from './auth.entity';
 import { Setting } from './setting.entity';
 
@@ -24,7 +25,11 @@ export class User {
     review?: Review[];
 
     @OneToMany(() => RoomJoin, roomJoin => roomJoin.user)
-    roomJoin?: RoomJoin[];
+    room_join?: RoomJoin[];
+
+    @JoinColumn()
+    @OneToOne(() => Alarm, alarm => alarm.user)
+    alarm?: Alarm;
 
     @Index({
         unique: true
@@ -84,6 +89,9 @@ export class User {
 
     @UpdateDateColumn()
     updated_at?: Date;
+
+    @DeleteDateColumn()
+    deleted_at?: Date;
 
     @Column({
         nullable: true

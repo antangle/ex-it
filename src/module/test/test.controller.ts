@@ -37,28 +37,4 @@ export class TestController {
     return `save new time : ${now}`;
   }
 
-  @Post()
-  create(@Body() createTestDto: CreateTestDto) {
-    return this.testService.create(createTestDto);
-  }
-
-  @Get()
-  findAll() {
-    return this.testService.findAll();
-  }
-
-  @Get(':id')
-  findOne(@Param('id') id: number) {
-    return this.testService.findOne(id);
-  }
-
-  @Patch(':id')
-  update(@Param('id') id: number, @Body() updateTestDto: UpdateTestDto) {
-    return this.testService.update(id, updateTestDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: number) {
-    return this.testService.remove(id);
-  }
 }

@@ -8,9 +8,12 @@ export interface ITokens {
 declare global {
 	namespace Express {
 		interface Request {
-            email: string,
             tokens: ITokens,
             endpoint: number
+            user: {
+                email: string,
+                type: string
+            }
         }
 	}
 }

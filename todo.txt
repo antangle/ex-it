@@ -1,1 +1,3 @@
 validateOAuthAccessToken 체크
+탈퇴시 5일동안 재가입 불가
+parent child category study

@@ -7,15 +7,9 @@ export class RoomTag {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @Column()
-    roomId!: number;
-
-    @Column()
-    tagId!: number;
-
-    @ManyToOne(() => Room, room => room.roomTag)
+    @ManyToOne(() => Room, room => room.room_tag)
     room?: Room;
     
-    @ManyToOne(() => Tag, tag => tag.roomTag)
+    @ManyToOne(() => Tag, tag => tag.room_tag)
     tag?: Tag;
 }

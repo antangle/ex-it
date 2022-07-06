@@ -1,23 +1,23 @@
-import { OnlyTokenDto } from './dto/refresh.dto';
+import { OAuthSignInDto } from './dto/oauth-siginin.dto';
+import { ChangePwDto } from './dto/change-pw.dto';
+import { DatabaseException } from './../../exception/database.exception';
 import { LocalLoginDto } from './dto/local-login.dto';
 import { CustomError } from '../../exception/custom.exception';
 import { UtilService } from '../util/util.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
-import { UpdateResult, TypeORMError } from 'typeorm';
+import { Connection, UpdateResult } from 'typeorm';
 import { Auth } from '../../entities/auth.entity';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
 import { UserService } from 'src/module/user/user.service';
-import { JwtAuthGuard } from '../../guard/jwtAuth.guard';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from '../../guard/localAuth.guard';
-import { Body, Controller, Get, Post, Request, UseFilters, UseGuards, HttpException, HttpStatus, Req } from '@nestjs/common';
+import { Body, Controller, Get, Post, Request, UseFilters, UseGuards, HttpException, HttpStatus, Req, Param } from '@nestjs/common';
 import { CreateUserDto } from 'src/module/user/dto/create-user.dto';
 import consts from 'src/consts/consts';
-import { CustomFilter } from 'src/filter/typeorm.filter';
-import { makeApiResponse, SetCode } from 'src/functions/util.functions';
-import { ApiBearerAuth, ApiBody, ApiHeader, ApiTags } from '@nestjs/swagger';
+import { makeApiResponse, SetCode, SetJwtAuth } from 'src/functions/util.functions';
+import { ApiBearerAuth, ApiBody, ApiHeader, ApiParam, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
+import { OauthException } from 'src/exception/axios.exception';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -26,167 +26,216 @@ export class AuthController {
     constructor(
         private authService: AuthService,
         private userService: UserService,
-        private utilService: UtilService
+        private utilService: UtilService,
+        private connection: Connection
     ){}
 
-    //!
-    @SetCode(101)
     @ApiBody({type: LocalLoginDto})
     @UseGuards(LocalAuthGuard)
+    @SetCode(101)
     @Post('login')
     async login(@Request() req){
         const tokens = await this.authService.signIn(req.user);
         return makeApiResponse(HttpStatus.OK, tokens);
     }
-    
+
+    @SetJwtAuth()
     @SetCode(102)
-    @ApiBody({type: OnlyTokenDto})
-    @ApiBearerAuth('access_token')
-    @UseGuards(JwtAuthGuard)
     @Post('logout')
     async logout(@Request() req){
-        //oauth logic required
-        if(req.user.type != consts.LOCAL){
-            const user = await this.authService.removeOAuthRefreshToken(req.user.email, req.user.type);
-            console.log(user);
-        }
-        const temp = await this.userService.removeLocalRefreshToken(req.user.email);
-        console.log('update', temp);
-        
-        return req.tokens;
-    }
+        //if user did oauth login
+        const queryRunner = this.connection.createQueryRunner();
+        try{
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
     
-    @SetCode(103)
+            let userId = null;
+            if(req.user.type != consts.LOCAL){
+                const updateAuthDto: UpdateAuthDto = {
+                    oauth_refresh_token: null
+                }
+                //returns userId
+                userId = await this.authService.updateOAuthRefreshToken(req.user.email, req.user.type, updateAuthDto, queryRunner);
+            }
+            else{
+                const user = await this.userService.findOneByEmail(req.user.email);
+                userId = user.id;
+            }
+            const updateUserDto: UpdateUserDto = {
+                refresh_token: null
+            }
+
+            await this.userService.updateLocalRefreshToken(userId, updateUserDto, queryRunner);
+            await queryRunner.commitTransaction();        
+            return makeApiResponse(HttpStatus.OK);
+        } catch(err){
+            await queryRunner.rollbackTransaction();
+            throw(err);
+        }
+        finally{
+            await queryRunner.release();
+        }
+    }
+
     @ApiBody({type: OAuthLoginDto})
+    @SetCode(103)
     @Post('oauth_login')
     async oauthLogin(@Body() oauthLoginDto: OAuthLoginDto){
         //authentication with access_token
-
+        //await this.authService.validateOAuthAccessToken(oauthLoginDto.oauth_access_token, oauthLoginDto.type);
         //if authenticated, login
-        const updateResult: UpdateResult = await this.authService.saveOAuthRefreshToken(oauthLoginDto);
-        if(updateResult.affected != 1){
-            throw new HttpException('refresh token save failed', HttpStatus.UNAUTHORIZED);
+        const queryRunner = this.connection.createQueryRunner();
+        try{
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+
+            const updateAuthDto: UpdateAuthDto = {
+                oauth_refresh_token: oauthLoginDto.oauth_refresh_token
+            };
+            const userId = await this.authService.updateOAuthRefreshToken(oauthLoginDto.email, oauthLoginDto.type, updateAuthDto, queryRunner);
+            const user = await this.userService.findUserById(userId, queryRunner);
+
+            const tokens = await this.authService.signIn(user, oauthLoginDto.type);
+
+            await queryRunner.commitTransaction();
+            return makeApiResponse(HttpStatus.OK, tokens);
+        } catch(err){
+            await queryRunner.rollbackTransaction();
+            throw err;
+        } finally{
+            await queryRunner.release();
         }
-
-        const userId = updateResult.raw[0].userId;
-        
-        const user = await this.userService.findOne(userId);
-        
-        return this.authService.signIn(user, oauthLoginDto.type);
     }
 
-
-    @SetCode(104)
-    //if access token is invalid, filter catches and redirect to refresh.
-    @ApiBearerAuth('access_token')
-    @UseGuards(JwtAuthGuard)
-    @Post('profile')
-    getProfile(@Request() req){
-        return req.user;
-    }
-
-    @SetCode(105)
     //you can only change passwords in local.
-    @ApiBearerAuth('access_token')
-    @UseGuards(JwtAuthGuard)
+    @ApiBody({type: ChangePwDto})
+    @SetJwtAuth()
+    @SetCode(105)
     @Post('change_pw')
     async changePassword(
         @Request() req,
-        @Body('old_pw') oldPw: string,
-        @Body('new_pw') newPw: string
+        @Body() changePwDto: ChangePwDto
     ){
-        if(req.user.type != consts.LOCAL){
-            throw new CustomError('oauth cant change pw', 1);
-        }
+        if(req.user.type != consts.LOCAL) throw new OauthException(consts.OAUTH_CANT_CHANGE_PW, consts.CHANGE_PW_ERROR_CODE);
+        const {old_pw, new_pw} = changePwDto
         const email = req.user.email;
-        const match = await this.authService.validateUser(email, oldPw);
-        if(!match){
-            throw new CustomError('password not match', 2);
-        }
-        
-        const hashedNewPassword = await this.utilService.hashPassword(newPw);
+        const user = await this.authService.validateUser(email, old_pw);
+
+        const hashedNewPassword = await this.utilService.hashPassword(new_pw);
         const updateUserDto: UpdateUserDto = {
             password: hashedNewPassword
         }
         
-        const update = await this.userService.updateByEmail(email, updateUserDto);
-        if(!update){
-            throw new HttpException('update failed', HttpStatus.UNAUTHORIZED);
-        }
-        return update;
+        const update = await this.userService.update(user.id, updateUserDto);
+        return makeApiResponse(HttpStatus.OK, req.user.tokens);
     }
 
-    @SetCode(106)
     //check email exists
-    @Post('email_check')
-    async checkEmail(@Body('email') email: string){
-        const isEmailExist = await this.userService.checkEmailExists(email);
-        return isEmailExist;
+    @SetCode(106)
+    @ApiQuery({
+        name: 'email',
+        required: true,
+        description: '확인할 이메일'
+    })
+    @Get('email_check')
+    async checkEmail(@Param('email') email: string){
+        const emailAvailable = await this.userService.checkEmailExists(email);
+        const payload = {
+            emailAvailable: emailAvailable
+        }
+        return makeApiResponse(HttpStatus.OK, payload);
     }
-    
-    @SetCode(107)
+
     //local signin - 회원가입
+    @SetCode(107)
     @Post('signin')
     async signIn(@Body() createUserDto: CreateUserDto){
-        createUserDto.nickname = this.utilService.makeRandomNickname();
-        
-        //bcrypt hashing
-        createUserDto.password = await this.utilService.hashPassword(createUserDto.password);
-        
-        const user = await this.userService.create(createUserDto);
-        return this.authService.signIn(user);
+        const queryRunner = this.connection.createQueryRunner();
+        try{
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+            createUserDto.nickname = await this.authService.getRandomNickname();
+
+            //bcrypt hashing
+            createUserDto.password = await this.utilService.hashPassword(createUserDto.password);
+
+            const user = await this.userService.createUser(createUserDto, queryRunner);
+            const tokens = await this.authService.signIn(user, consts.LOCAL, queryRunner);
+
+            await queryRunner.commitTransaction();
+            return makeApiResponse(HttpStatus.OK, tokens);
+        } catch(err){
+            await queryRunner.rollbackTransaction();
+            throw err;
+        } finally{
+            await queryRunner.release();
+        }
     }
 
-    @SetCode(108)
     //social signin
+    @SetCode(108)
     @Post('oauth_signin')
-    @UseFilters(CustomFilter)
-    async oauthSignIn(
-        @Body('email') email: string,
-        @Body('access_token') accessToken: string,
-        @Body('refresh_token') refreshToken: string,
-        @Body('type') type: string,
-        @Body('terms') terms: boolean,
-        @Body('personal_info_terms') personalInfoTerms: boolean,
-        @Body('is_authenticated') isAuthenticated: boolean,
-    ){
-        //check authentication with access token
-        if(!await this.authService.validateOAuthAccessToken(type, accessToken)){
-            throw new CustomError('oauth access token invalid', 1);
-        }
-
-        //make dtos
-        const createUserDto: CreateUserDto = {
-            nickname: await this.authService.getRandomNickname(),
-            email: email,
-            terms: terms,
-            personal_info_terms: personalInfoTerms,
-            is_authenticated: isAuthenticated
-        }
+    async oauthSignIn(@Body() oAuthSignInDto: OAuthSignInDto){
+        const { 
+            type, 
+            oauth_access_token, 
+            email, 
+            terms, 
+            personal_info_terms, 
+            is_authenticated, 
+            oauth_refresh_token 
+        } = oAuthSignInDto;
         
-        //check if already signed in Auth
-        const auth: Auth = await this.authService.findOne(email, type);
-        if(auth){
-            throw new CustomError(`${auth.type} already exists`, 2);
-        }
+        //check authentication with access token
+        //const isValid = await this.authService.validateOAuthAccessToken(oauth_access_token, type)
+        const queryRunner = this.connection.createQueryRunner();
 
-        //if authenticated, check user exists.
-        let user = await this.userService.findOneByEmail(email);
-        //if user with that email already exists, just link
-        if(!user){
-            console.log('hi!');
-            user = await this.userService.create(createUserDto);
-        }
+        try{
+            //make dtos
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+            const createUserDto: CreateUserDto = {
+                nickname: await this.authService.getRandomNickname(),
+                email: email,
+                terms: terms,
+                personal_info_terms: personal_info_terms,
+                is_authenticated: is_authenticated
+            };
 
-        const authCreateDto: Auth = {
-            user: user,
-            email: email,
-            type: type, 
-            refresh_token: refreshToken
-        }
-        await this.authService.create(authCreateDto);
+            //check if already signed in Auth
+            await this.authService.findIfUserExists(email, type, queryRunner);
 
-        //link user to auth
-        return await this.authService.signIn(user, type);
+            //if authenticated, check user exists.
+            let user = await this.userService.findOneByEmailReturnNull(email, queryRunner);
+            //if user with that email already exists, just link
+            if(!user) user = await this.userService.createUser(createUserDto, queryRunner);
+
+            const authCreateDto: Auth = {
+                user: user,
+                email: email,
+                type: type,
+                oauth_refresh_token: oauth_refresh_token
+            }
+            //link user to auth
+            await this.authService.createAuth(authCreateDto, queryRunner);
+            const tokens = await this.authService.signIn(user, type, queryRunner);
+
+            await queryRunner.commitTransaction();
+            return makeApiResponse(HttpStatus.OK, tokens);
+        } catch(err){
+            await queryRunner.rollbackTransaction();
+            throw(err);
+        } finally{
+            await queryRunner.release();
+        }
+    }
+
+    @SetJwtAuth()
+    @SetCode(107)
+    @Post('quit')
+    async quit(@Request() req,){
+        const email = req.user.email;
+        const update = await this.userService.remove(email);
+        return makeApiResponse(HttpStatus.OK);
     }
 }

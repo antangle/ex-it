@@ -1,3 +1,4 @@
+import { Review } from './review.entity';
 import { RoomTag } from './roomTag.entity';
 import { RoomJoin } from './roomJoin.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinTable, ManyToOne, OneToMany, DeleteDateColumn } from 'typeorm';
@@ -12,30 +13,23 @@ export class Room {
   create_user?: User
 
   @OneToMany(() => RoomJoin, roomJoin => roomJoin.room)
-  roomJoin?: RoomJoin;
-
+  room_join?: RoomJoin;
 
   @OneToMany(() => RoomTag, roomTag => roomTag.room)
-  roomTag?: RoomTag;
+  room_tag?: RoomTag;
   
-  @Column()
-  title: String;
+  @OneToOne(() => Review, review => review.room)
+  review?: Review;
 
   @Column()
-  username?: string;
+  title: string;
+
+  @Column()
+  nickname?: string;
 
   @Column()
   max_occupancy?: number;
 
-  @Column()
-  current_occupancy?: number;
-  
-  @Column()
-  state?: string;
-  
-  @Column()
-  communication?: string;
-  
   @Column()
   hardcore?: boolean;
 
@@ -44,4 +38,28 @@ export class Room {
 
   @Column()
   observer?: number;
+
+  @Column({
+    nullable: true
+  })
+  talk_time?: number;
+  
+  @Column({
+    nullable: true
+  })
+  call_time?: number;
+
+  //checks if this room is online
+  @Column({
+    nullable: true,
+    default: true
+  })
+  is_online: boolean = true;
+
+  //checks if this room is occupied
+  @Column({
+    nullable: true,
+    default: false
+  })
+  is_occupied: boolean = false;
 }

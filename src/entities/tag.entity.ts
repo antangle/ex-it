@@ -1,6 +1,5 @@
-import { SubTag } from './subtag.entity';
 import { RoomTag } from './roomTag.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Unique, ManyToOne } from 'typeorm';
 import { Room } from './room.entity';
 import { User } from './user.entity';
 
@@ -8,16 +7,19 @@ import { User } from './user.entity';
 export class Tag {
     @PrimaryGeneratedColumn()
     id?: number;
+    
+    @OneToMany(() => RoomTag, roomTag => roomTag.tag)
+    room_tag?: RoomTag;
 
     @Column()
     name?: string;
-
-    @OneToMany(() => RoomTag, roomTag => roomTag.tag)
-    roomTag?: RoomTag;
-  
-    @OneToMany(() => SubTag, subTag => subTag.tag)
-    subtag?: SubTag;
-  
+    
     @Column()
     is_popular?: boolean;
+
+    @ManyToOne(() => Tag, tag => tag.children)
+    parent: Tag;
+
+    @OneToMany(() => Tag, tag => tag.parent)
+    children: Tag[]
 }

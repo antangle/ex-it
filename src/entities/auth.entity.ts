@@ -16,6 +16,8 @@ export class Auth {
     @Column()
     type?: string
 
-    @Column()
-    refresh_token?: string
+    @Column({
+        nullable: true,
+    })
+    oauth_refresh_token?: string
 }

@@ -8,8 +8,9 @@ import { UserModule } from './module/user/user.module';
 import { TestModule } from './module/test/test.module';
 import { AuthModule } from './module/auth/auth.module';
 import { RedisModule } from './module/redis/redis.module';
-import { RoomModule } from './module/room/room.module';
 import { UtilModule } from './module/util/util.module';
+import { ProfileModule } from './module/profile/profile.module';
+import { RoomModule } from './module/room/room.module';
 
 @Module({ 
   imports: [
@@ -24,7 +25,8 @@ import { UtilModule } from './module/util/util.module';
     AuthModule,
     RedisModule,
     RoomModule,
-    UtilModule
+    UtilModule,
+    ProfileModule
   ],
   controllers: [AppController],
   providers: [

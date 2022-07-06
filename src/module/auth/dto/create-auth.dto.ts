@@ -10,6 +10,6 @@ export class CreateAuthDto {
 
     @IsOptional()
     @IsString()
-    refresh_token?: string;
+    oauth_refresh_token?: string;
 
 }

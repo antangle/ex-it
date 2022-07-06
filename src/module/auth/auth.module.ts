@@ -13,10 +13,11 @@ import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategy/jwt.stategy';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtAuthGuard } from '../../guard/jwtAuth.guard';
+import { UserRepository } from '../user/user.repository';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AuthRepository]),
+    TypeOrmModule.forFeature([AuthRepository, UserRepository]),
     UserModule,
     PassportModule,
     UtilModule,
@@ -36,6 +37,6 @@ import { JwtAuthGuard } from '../../guard/jwtAuth.guard';
     LocalStrategy,
     JwtStrategy
   ],
-  exports: [AuthService]
+  exports: [AuthService, JwtModule]
 })
 export class AuthModule {}

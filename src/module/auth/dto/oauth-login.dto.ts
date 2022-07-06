@@ -12,12 +12,12 @@ export class OAuthLoginDto {
     @IsString()
     type?: string;
 
-    @ApiProperty({name: consts.ACCESS_TOKEN})
+    @ApiProperty({name: consts.OAUTH_ACCESS_TOKEN})
     @IsString()
-    accessToken?: string;
+    oauth_access_token?: string;
 
-    @ApiProperty({name: consts.REFRESH_TOKEN})
+    @ApiProperty({name: consts.OAUTH_REFRESH_TOKEN})
     @IsString()
-    refreshToken?: string;
+    oauth_refresh_token?: string;
 
 }

@@ -46,7 +46,7 @@ export class UtilService {
                 }
                 break;
         }
-
+        
         return lastValueFrom(await this.httpService.axiosRef.get(url, options));
     }
 
@@ -73,12 +73,14 @@ export class UtilService {
             refresh_token
         };
     }
+
     async hashPassword(password: string): Promise<string>{
         const rounds: number = this.configService.get<number>('BCRYPT_SALT');
         const salt: string = await bcrypt.genSalt(+rounds);
         const hashedPassword = await bcrypt.hash(password, salt);
         return hashedPassword;
     }
+
     async comparePassword(password: string, hashedPassword: string): Promise<boolean>{
         return bcrypt.compare(password, hashedPassword);
     }
