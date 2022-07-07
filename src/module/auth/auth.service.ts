@@ -124,7 +124,6 @@ export class AuthService {
         //if refresh token is valid, compare with database
         //get user depending on type.
         try{
-            console.log(refreshToken, email, type);
             const user = await this.userService.findUser(email, type);
             if(!user) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.COMPARE_REFRESH_TOKENS_ERROR_CODE);
             

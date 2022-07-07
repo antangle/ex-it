@@ -1,3 +1,5 @@
+import { parseReview } from 'src/functions/util.functions';
+import { RoomJoinRepository } from './room-join.repository';
 import { RoomJoin } from './../../entities/roomJoin.entity';
 import { RoomTag } from './../../entities/roomTag.entity';
 import { RoomRepository } from './room.repository';
@@ -6,7 +8,7 @@ import { UserRepository } from './../user/user.repository';
 import { User } from './../../entities/user.entity';
 import { UnhandledException } from './../../exception/unhandled.exception';
 import { DatabaseException } from './../../exception/database.exception';
-import { Repository } from 'typeorm';
+import { Repository, InsertResult } from 'typeorm';
 import { Tag } from './../../entities/tag.entity';
 import { QueryRunner } from 'typeorm';
 import { Injectable } from '@nestjs/common';
@@ -17,10 +19,11 @@ import { Room } from 'src/entities/room.entity';
 @Injectable()
 export class RoomService {
     constructor(
+        private userRepository: UserRepository,
         private roomRepository: RoomRepository,
+        private roomJoinRepository: RoomJoinRepository,
         @InjectRepository(Tag) private tagRepository: Repository<Tag>,
         @InjectRepository(RoomTag) private roomTagRepository: Repository<RoomTag>,
-        @InjectRepository(RoomJoin) private roomJoinRepository: Repository<RoomJoin>,
     ){}
 
     async getMainTags(queryRunner ?: QueryRunner){
@@ -28,9 +31,9 @@ export class RoomService {
         try{
             const tags: Tag[] = await tagRepository.find({
                 select: ['id', 'name'],
-                where: {is_popular: true},
+                where: { is_popular: true },
                 order: {
-                    name: 'ASC'
+                    'id': 'ASC'
                 }
             });
             if(!tags) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_MAIN_TAGS_ERROR_CODE);
@@ -41,7 +44,27 @@ export class RoomService {
         }
     }
 
-    async getTopics(tagId: number, queryRunner ?: QueryRunner){
+    async checkCustomTags(customTags: Tag[], queryRunner ?: QueryRunner){
+        const tagRepository = queryRunner ? queryRunner.manager.getRepository(Tag) : this.tagRepository;
+        try{
+
+            const tags = await tagRepository.createQueryBuilder('tag')
+                .insert()
+                .values(customTags)
+                .orUpdate({
+                    conflict_target: ['name'],
+                    overwrite: ['name']
+                })
+                .returning('id')
+                .execute();
+            return tags.raw;
+        } catch(err){
+            if(err instanceof DatabaseException) throw err;
+            else throw new UnhandledException(this.getMainTags.name, consts.GET_MAIN_TAGS_ERROR_CODE, err);
+        }
+    }
+
+   /*  async getTopics(tagId: number, queryRunner ?: QueryRunner){
         const tagRepository = queryRunner ? queryRunner.manager.getRepository(Tag) : this.tagRepository;
         try{
             const tags = await tagRepository.createQueryBuilder('tag')
@@ -55,26 +78,32 @@ export class RoomService {
             if(err instanceof DatabaseException) throw err;
             else throw new UnhandledException(this.getMainTags.name, consts.GET_TOPICS_ERROR_CODE, err);
         }
-    }
+    } */
 
-    async createRoom(createRoomDto: CreateRoomDto, queryRunner: QueryRunner){
+    async createRoom(createRoomDto: Room, queryRunner: QueryRunner): Promise<InsertResult>{
         const roomRepository = queryRunner.manager.getCustomRepository(RoomRepository);
         try{
             const room = await roomRepository.insert(createRoomDto);
             if(!room.identifiers[0].id) throw new DatabaseException(consts.INSERT_FAILED, consts.CREATE_ROOM_ERROR_CODE);
-            return room.identifiers[0].id;
+            return room;
         } catch(err){
             if(err instanceof DatabaseException) throw err;
             else throw new UnhandledException(this.createRoom.name, consts.CREATE_ROOM_ERROR_CODE, err);
         }
     }
-    async parseArrayToRoomTags(tags: Array<number>, roomId: number):Promise<RoomTag[]>{
+    parseSetToRoomTags(tags: Set<number>, roomId: number): RoomTag[]{
         const data = [];
-        tags.map(x => data.push({
+        tags.forEach(x => data.push({
             room: roomId,
             tag: x
         }))
-        console.log(data);
+        return data;        
+    }
+    parseCustomTags(customTags: Array<string>):Tag[]{
+        const data = [];
+        customTags.map(x => data.push({
+            name: x
+        }))
         return data;        
     }
     
@@ -129,6 +158,54 @@ export class RoomService {
             if(err instanceof DatabaseException) throw err;
             else throw new UnhandledException(this.getMainTags.name, consts.JOIN_ROOM_ERROR_CODE, err);
         }
+    }
+
+    async getUserId(roomId: number, status: string, queryRunner?: QueryRunner){
+        const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
+        try{
+            const room = await roomJoinRepository.findOne({
+                where: {
+                    roomId: roomId,
+                    status: status
+                }
+            });
+            console.log(room);
+            if(!room) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_USER_ID_ERROR_CODE);
+            return 1
+        } catch(err){
+            if(err instanceof DatabaseException) throw err;
+            else throw new UnhandledException(this.getUserId.name, consts.GET_USER_ID_ERROR_CODE, err);
+        }
+    }
+
+
+    //todo
+    async getUserInfo(userId: number, queryRunner?: QueryRunner){
+        const userRepository = queryRunner ? queryRunner.manager.getCustomRepository(UserRepository) : this.userRepository;
+        const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
+        try{
+
+            const userInfo = await userRepository.getProfileQuery(userId);
+            const tags = await roomJoinRepository.getMostUsedTags(userId);
+            const reviews = await userRepository.getReviewCount(userId);
+            const parsedReviews = parseReview(reviews);
+            return {
+                userInfo: userInfo[0],
+                usedTags: this.parseTags(tags),
+                reviews: parsedReviews
+            }
+        } catch(err){
+            if(err instanceof DatabaseException) throw err;
+            else throw new UnhandledException(this.getUserInfo.name, consts.GET_USER_INFO_ERROR_CODE, err);
+        }
+    }
+
+    parseTags(tags: any[]){
+        const parsed = [];
+        tags.map(x => {
+            parsed.push(x.tag)
+        });
+        return parsed;
     }
 
 }

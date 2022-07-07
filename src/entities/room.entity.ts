@@ -8,7 +8,7 @@ import { User } from './user.entity';
 export class Room {
   @PrimaryGeneratedColumn()
   id?: number;
-  
+
   @ManyToOne(() => User)
   create_user?: User
 
@@ -22,7 +22,12 @@ export class Room {
   review?: Review;
 
   @Column()
-  title: string;
+  title?: string;
+
+  @Column({
+    unique: true
+  })
+  roomname?: string;
 
   @Column()
   nickname?: string;
@@ -54,12 +59,11 @@ export class Room {
     nullable: true,
     default: true
   })
-  is_online: boolean = true;
+  is_online?: boolean = true;
 
   //checks if this room is occupied
   @Column({
     nullable: true,
-    default: false
   })
-  is_occupied: boolean = false;
+  is_occupied?: Date = null;
 }

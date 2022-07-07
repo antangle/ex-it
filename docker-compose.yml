@@ -32,7 +32,6 @@ services:
     volumes:
       - /app/node_modules
 
-
   redis:
     image: redis:3
     hostname: redis
@@ -43,6 +42,7 @@ services:
     volumes: 
       - cache:/data
     restart: always
+
 volumes:
   pgdata:
   cache:

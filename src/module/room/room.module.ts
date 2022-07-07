@@ -10,10 +10,11 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { RoomController } from './room.controller';
+import { RoomJoinRepository } from './room-join.repository';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([UserRepository, Tag, RoomRepository, RoomTag, RoomJoin]),
+    TypeOrmModule.forFeature([UserRepository, Tag, RoomRepository, RoomTag, RoomJoinRepository]),
     AuthModule,
     UtilModule,
     UserModule,

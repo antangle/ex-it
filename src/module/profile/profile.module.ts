@@ -1,8 +1,4 @@
-import { RoomJoin } from './../../entities/roomJoin.entity';
-import { Review } from './../../entities/review.entity';
-import { Alarm } from './../../entities/alarm.entity';
 import { UserRepository } from './../user/user.repository';
-import { AuthRepository } from './../auth/auth.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../user/user.module';
 import { AuthModule } from '../auth/auth.module';

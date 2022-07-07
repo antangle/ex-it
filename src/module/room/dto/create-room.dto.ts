@@ -1,5 +1,5 @@
 import { User } from './../../../entities/user.entity';
-import { IsArray, isBoolean, IsBoolean, IsDate, IsNumber, IsOptional, isString, IsString, ValidateNested } from "class-validator";
+import { IsArray, isBoolean, IsBoolean, IsDate, IsInt, IsNumber, IsOptional, isString, IsString, MaxLength, MinLength, ValidateNested } from "class-validator";
 
 export class CreateRoomDto {
 
@@ -26,5 +26,18 @@ export class CreateRoomDto {
     @IsOptional()
     @IsString()
     is_online?: boolean;
+
+    @IsOptional()
+    @IsString()
+    roomname: string;
     
+    @IsArray()
+    @IsString({each: true})
+    @MaxLength(6, {each: true})
+    custom_tags: string[];
+
+    @IsArray()
+    @IsInt({each: true})
+    tags: number[];
+
 }

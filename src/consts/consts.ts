@@ -1,7 +1,8 @@
 export = {
     //normal consts
-    OK: 1,
-
+    OK: 200,
+    LIMIT_MOST_USED_TAGS: 3,
+    PAGINATION_TAKE: 20,
     LOCAL: 'local',
     //for testing purposes
     LOCAL_URL: 'https://ex-it.app/health',
@@ -75,4 +76,6 @@ export = {
     CREATE_ROOM_ERROR_CODE: 31,
     SAVE_ROOM_TAGS_ERROR_CODE: 32,
     JOIN_ROOM_ERROR_CODE: 33,
+    GET_USER_INFO_ERROR_CODE: 34,
+    GET_USER_ID_ERROR_CODE: 35,
 }

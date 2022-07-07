@@ -1,4 +1,3 @@
-import { Alarm } from './alarm.entity';
 import { Review } from './review.entity';
 import { RoomJoin } from './roomJoin.entity';
 import { Inquiry } from './inquiry.entity';
@@ -27,9 +26,10 @@ export class User {
     @OneToMany(() => RoomJoin, roomJoin => roomJoin.user)
     room_join?: RoomJoin[];
 
-    @JoinColumn()
-    @OneToOne(() => Alarm, alarm => alarm.user)
-    alarm?: Alarm;
+    @Column({
+        default: true
+    })
+    alarm?: boolean = false;
 
     @Index({
         unique: true

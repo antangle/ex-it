@@ -2,9 +2,10 @@ import { AuthorizedUser } from './../../types/user.d';
 import { Controller, Get, Request, HttpStatus, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { AuthUser } from 'src/decorator/decorators';
-import { SetCode, SetJwtAuth, makeApiResponse } from 'src/functions/util.functions';
+import { SetCode, SetJwtAuth, makeApiResponse, parseReview } from 'src/functions/util.functions';
 import { Connection } from 'typeorm';
 import { ProfileService } from './profile.service';
+import { DateDto } from './dto/date.dto';
 
 @ApiTags('mypage')
 @Controller('mypage')
@@ -31,7 +32,13 @@ export class ProfileController {
   @Get('myinfo')
   async getMyPage(@AuthUser() user: AuthorizedUser){
     const reviews = await this.profileService.getMyInfo(user.email);
-    return makeApiResponse(HttpStatus.OK, this.profileService.parseReview(reviews));
+    const reviewData = parseReview(reviews);
+    
+    const result = {
+      nickname: reviews[0].nickname,
+      reviews: reviewData
+    }
+    return makeApiResponse(HttpStatus.OK, result);
   }
   
   @SetJwtAuth()
@@ -41,26 +48,29 @@ export class ProfileController {
     const account = await this.profileService.getMyAccountInfo(user.email, user.type);
     return makeApiResponse(HttpStatus.OK, account);
   }
-  
+/*
   @SetJwtAuth()
   @SetCode(204)
   @Get('alarm')
   async getAlarm(@AuthUser() user: AuthorizedUser){
     const alarm = await this.profileService.getAlarmInfo(user.email);
     return makeApiResponse(HttpStatus.OK, alarm);
-  }
+  } */
 
   //date format: YYYY-MM-DD
   //return time: seconds
-  @SetJwtAuth()
+/*   @SetJwtAuth()
   @SetCode(205)
   @Get('chattime')
   async getChatTime(
     @AuthUser() user: AuthorizedUser,
-    @Query('date') date: Date
+    @Query() dateDto: DateDto
     ){
+      let date = dateDto.date;
+      if(!date) date = new Date(0);
+      
       const chatTime = await this.profileService.getChatTimeInfo(user.email, date);
       return makeApiResponse(HttpStatus.OK, chatTime);
   }
-  
+   */
 }

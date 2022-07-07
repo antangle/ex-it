@@ -14,7 +14,13 @@ export class RoomJoin {
     user?: User;
 
     @Column()
-    status: string;
+    status?: string;
+
+    @Column()
+    roomId?: number;
+
+    @Column()
+    userId?: number;
 
     @CreateDateColumn()
     created_at?: Date;

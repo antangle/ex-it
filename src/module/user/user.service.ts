@@ -57,7 +57,6 @@ export class UserService {
   async updateLocalRefreshToken(userId: number, updateDto, queryRunner: QueryRunner):Promise<any> {
     try {
       const user: UpdateResult = await queryRunner.manager.getCustomRepository(UserRepository).update(userId, updateDto);
-      console.log(user);
       if(!user || user.affected != 1){
         throw new DatabaseException(consts.UPDATE_FAILED, consts.SIGNIN_ERROR_CODE);
       }

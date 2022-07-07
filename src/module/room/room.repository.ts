@@ -4,10 +4,11 @@ import { Tag } from './../../entities/tag.entity';
 import { Repository } from 'typeorm';
 import { EntityRepository } from 'typeorm';
 import { Room } from '../../entities/room.entity'
+import consts from 'src/consts/consts';
 
 @EntityRepository(Room)
 export class RoomRepository extends Repository<Room> {
-    async getAllRoomsPaged(page: number = 0, take: number = 10){
+    async getAllRoomsPaged(page: number = 0, take: number = consts.PAGINATION_TAKE){
         const status = ['host', 'guest'];
         return await this.createQueryBuilder('room')
             .select([
@@ -84,9 +85,4 @@ export class RoomRepository extends Repository<Room> {
 
     }
 
-    async getRooms(){
-        return await this.createQueryBuilder()
-            .select('ARRAY_AGG(tag.name)')
-            .from(Tag, 'tag')
-        }
 }

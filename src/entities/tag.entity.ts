@@ -1,7 +1,5 @@
 import { RoomTag } from './roomTag.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Unique, ManyToOne } from 'typeorm';
-import { Room } from './room.entity';
-import { User } from './user.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToMany, Unique, ManyToOne, Index } from 'typeorm';
 
 @Entity({name: 'tag'})
 export class Tag {
@@ -11,15 +9,15 @@ export class Tag {
     @OneToMany(() => RoomTag, roomTag => roomTag.tag)
     room_tag?: RoomTag;
 
-    @Column()
+    @Index()
+    @Column({
+        unique: true
+    })
     name?: string;
-    
-    @Column()
-    is_popular?: boolean;
 
-    @ManyToOne(() => Tag, tag => tag.children)
-    parent: Tag;
-
-    @OneToMany(() => Tag, tag => tag.parent)
-    children: Tag[]
+    @Column({
+        default: false,
+        nullable: true
+    })
+    is_popular: boolean;
 }
