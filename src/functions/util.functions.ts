@@ -1,3 +1,4 @@
+import { ApiResult } from './../types/user.d';
 import { RoomTag } from './../entities/roomTag.entity';
 import { JwtAuthGuard } from './../guard/jwtAuth.guard';
 import { apiHeaderOptions } from './../consts/objects';
@@ -25,12 +26,14 @@ export function generateCode(endpoint: number, code: number): number{
     return +(endpoint.toString() + code.toString());
 }
 
+
 export function makeApiResponse(code: number, data?: any, msg?: string){
-    return {
+    const res: ApiResult = {
         msg: msg,
         code: code,
         data: data
     }
+    return res;
 }
 
 export function parseReview(reviews: any[]){
@@ -55,7 +58,7 @@ export function parseReview(reviews: any[]){
   }
 }
 
-const reviewMapperArray = [
+export const reviewMapperArray = [
   '이 배열은 review 테이블의 mode를 해당 string으로 매핑하는 배열입니다.',
   '시원하게 쏴대는',
   '재밌게 말하는',

@@ -1,3 +1,7 @@
+import { Ban } from './../../entities/ban.entity';
+import { ReviewDto } from './dto/review.dto';
+import { reviewMapperArray } from './../../functions/util.functions';
+import { Review } from './../../entities/review.entity';
 import { parseReview } from 'src/functions/util.functions';
 import { RoomJoinRepository } from './room-join.repository';
 import { RoomJoin } from './../../entities/roomJoin.entity';
@@ -23,7 +27,9 @@ export class RoomService {
         private roomRepository: RoomRepository,
         private roomJoinRepository: RoomJoinRepository,
         @InjectRepository(Tag) private tagRepository: Repository<Tag>,
+        @InjectRepository(Review) private reviewRepository: Repository<Review>,
         @InjectRepository(RoomTag) private roomTagRepository: Repository<RoomTag>,
+        @InjectRepository(Ban) private banRepository: Repository<Ban>,
     ){}
 
     async getMainTags(queryRunner ?: QueryRunner){
@@ -115,7 +121,7 @@ export class RoomService {
         }; 
     }
 
-    async saveRoomTags(roomtags: RoomTag[], queryRunner: QueryRunner){
+    async saveRoomTags(roomtags: RoomTag[], queryRunner?: QueryRunner){
         const roomTagRepository = queryRunner ? queryRunner.manager.getRepository(RoomTag) : this.roomTagRepository;
         try{
             return await roomTagRepository.createQueryBuilder('room_tag')
@@ -125,7 +131,22 @@ export class RoomService {
                 .execute();
         } catch(err){
             if(err instanceof DatabaseException) throw err;
-            else throw new UnhandledException(this.getMainTags.name, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);
+            else throw new UnhandledException(this.saveRoomTags.name, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);
+        }
+    }
+
+    async createReview(review: Review, queryRunner?: QueryRunner){
+        const reviewRepository = queryRunner ? queryRunner.manager.getRepository(Review) : this.reviewRepository;
+        try{
+            return await reviewRepository.createQueryBuilder('review')
+                .insert()
+                .into(Review)
+                .values(review)
+                .execute();
+
+        } catch(err){
+            if(err instanceof DatabaseException) throw err;
+            else throw new UnhandledException(this.createReview.name, consts.CREATE_REVIEW_ERROR_CODE, err);
         }
     }
 
@@ -139,10 +160,18 @@ export class RoomService {
             else throw new UnhandledException(this.getMainTags.name, consts.GET_ALL_ROOMS_ERROR_CODE, err);
         }
     }
-    async getSearchedRooms(tagId: number, searchTitle: string, page?:number, take?: number, queryRunner?: QueryRunner){
+
+    async getSearchedRooms(
+        userId: number, 
+        tagId: number, 
+        searchTitle: string, 
+        page: number = 0, 
+        take: number = 10, 
+        queryRunner?: QueryRunner
+    ){
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
-            const rooms = await roomRepository.searchRoomsPaged(tagId, searchTitle, page, take);
+            const rooms = await roomRepository.searchRoomsPaged(userId, tagId, searchTitle, page, take);
             return rooms;
         } catch(err){
             if(err instanceof DatabaseException) throw err;
@@ -160,21 +189,52 @@ export class RoomService {
         }
     }
 
-    async getUserId(roomId: number, status: string, queryRunner?: QueryRunner){
+    async getUserIdByStatus(roomId: number, status: string, queryRunner?: QueryRunner){
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
-            const room = await roomJoinRepository.findOne({
+            const roomJoin = await roomJoinRepository.findOne({
                 where: {
                     roomId: roomId,
                     status: status
                 }
             });
-            console.log(room);
-            if(!room) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_USER_ID_ERROR_CODE);
-            return 1
+            if(!roomJoin.userId) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_USER_ID_ERROR_CODE);
+            return roomJoin.userId;
         } catch(err){
             if(err instanceof DatabaseException) throw err;
-            else throw new UnhandledException(this.getUserId.name, consts.GET_USER_ID_ERROR_CODE, err);
+            else throw new UnhandledException(this.getUserIdByStatus.name, consts.GET_USER_ID_ERROR_CODE, err);
+        }
+    }
+
+    async findRoomUser(roomId: number, queryRunner?: QueryRunner): Promise<User>{
+        const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
+        try{
+            const room = await roomRepository.findOne({
+                where: {id: roomId},
+                relations: ['create_user']
+            });
+            console.log(room);
+            if(!room.create_user) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.FIND_ROOM_USER);
+            return room.create_user;
+        } catch(err){
+            if(err instanceof DatabaseException) throw err;
+            else throw new UnhandledException(this.findRoomUser.name, consts.FIND_ROOM_USER, err);
+        }
+    }
+
+    async banUser(mainUser: User, banUser: User, queryRunner?: QueryRunner): Promise<any>{
+        const banRepository = queryRunner ? queryRunner.manager.getRepository(Ban) : this.banRepository;
+        try{
+            const ban: Ban = {
+                user: mainUser,
+                banned_user: banUser
+            }
+            const result = await banRepository.insert(ban);
+            if(!result) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.FIND_ROOM_USER);
+            return result;
+        } catch(err){
+            if(err instanceof DatabaseException) throw err;
+            else throw new UnhandledException(this.findRoomUser.name, consts.FIND_ROOM_USER, err);
         }
     }
 
@@ -200,12 +260,53 @@ export class RoomService {
         }
     }
 
+    async findRoom(roomId: number, queryRunner?: QueryRunner){
+        const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
+        try{
+            const room = await roomRepository.findOne(roomId);
+            if(!room) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.FIND_ROOM_ERROR_CODE);
+            
+            let countObservers = await roomRepository.observerCount(roomId);
+            let observers = countObservers.count
+            if(!observers) observers = 0;
+
+            return {room, count: observers};
+        } catch(err){
+            if(err instanceof DatabaseException) throw err;
+            else throw new UnhandledException(this.findRoom.name, consts.FIND_ROOM_ERROR_CODE, err);
+        }
+    }
+
+    async checkOccupied(roomId: number, queryRunner?: QueryRunner){
+        const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
+        try{
+            const room = await roomRepository.findOne(roomId);
+            return !room.is_occupied;
+        } catch(err){
+            if(err instanceof DatabaseException) throw err;
+            else throw new UnhandledException(this.checkOccupied.name, consts.CHECK_OCCUPIED_ERROR_CODE, err);
+        }
+    }
+
+    findReview(){
+        return reviewMapperArray.slice(1);
+    }
+
     parseTags(tags: any[]){
         const parsed = [];
         tags.map(x => {
             parsed.push(x.tag)
         });
         return parsed;
+    }
+
+    makeReview(reviewDto: ReviewDto): Review{
+        return {
+            mode: reviewDto.review_id + 1,
+            title: reviewMapperArray[reviewDto.review_id + 1],
+            user: {id: reviewDto.host_id},
+            room: {id: reviewDto.room_id}
+        }
     }
 
 }

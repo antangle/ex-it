@@ -1,3 +1,5 @@
+import { Ban } from './../../entities/ban.entity';
+import { Review } from './../../entities/review.entity';
 import { RoomJoin } from './../../entities/roomJoin.entity';
 import { RoomTag } from './../../entities/roomTag.entity';
 import { RoomRepository } from './room.repository';
@@ -14,7 +16,15 @@ import { RoomJoinRepository } from './room-join.repository';
 
 @Module({
   imports:[
-    TypeOrmModule.forFeature([UserRepository, Tag, RoomRepository, RoomTag, RoomJoinRepository]),
+    TypeOrmModule.forFeature([
+      UserRepository, 
+      RoomRepository, 
+      RoomJoinRepository, 
+      Tag, 
+      RoomTag, 
+      Review, 
+      Ban
+    ]),
     AuthModule,
     UtilModule,
     UserModule,

@@ -1,9 +1,10 @@
-validateOAuthAccessToken 체크
+validateOAuthAccessToken 체크 v
+
 탈퇴시 5일동안 재가입 불가 ban
-make review
-redis cache DB
 
 CHAT
+redis cache DB - save chat logs
+
 VOICE CHAT
 
 //thu
@@ -11,5 +12,5 @@ alarm 설정 제거                      v
 mypage setting 대화 연결 횟수        v
 user_info                           v
 대화방 만들기 태그 변경               v
-make review                         
+make review                         v
 parent child category study         v

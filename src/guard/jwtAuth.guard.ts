@@ -30,8 +30,17 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         
         let decoded = this.validateAccessToken(accessToken);
         //if valid access token, then sign and return
-        if(decoded) return this.signJwtToken(request, decoded, refreshToken);
-
+        if(decoded) {
+            request.user = {
+                id: decoded.id,
+                email: decoded.email,
+                type: decoded.type
+            };
+            const tokens = this.signJwtToken(decoded);
+            tokens.refresh_token = refreshToken;
+            request.tokens = tokens;
+            return true;
+        }
         //verify refresh token, if invalid, throw
         let decodedRefreshToken: any;
         try{
@@ -43,7 +52,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
         //compare refresh tokens
         decoded = this.jwtService.decode(accessToken) as {[key: string]: any};
-        const user = await this.authService.compareRefreshTokens(refreshToken, decoded.email, decoded.type);
+        const user = await this.authService.compareRefreshTokens(refreshToken, decoded.id);
 
         let tokens: ITokens;
         //sign new jwt tokens
@@ -58,28 +67,21 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
 
         request.tokens = tokens;
         request.user = {
+            id: user.id,
             email: user.email,
             type: decoded.type
         }
         return true;
     }
 
-    private signJwtToken(request, decoded: any, refreshToken: string) {
-        request.user = {
-            email: decoded.email,
-            type: decoded.type
-        };
+    private signJwtToken(decoded: any) {
         const payload = this.utilService.makePayload({
+            id: decoded.id,
             email: decoded.email,
             nickname: decoded.nickname
         }, decoded.type);
-
-        const newAccessToken: string = this.utilService.signJwt(payload, decoded.type).access_token;
-        request.tokens = {
-            access_token: newAccessToken,
-            refresh_token: refreshToken
-        };
-        return true;
+        const tokens = this.utilService.signJwt(payload, decoded.type);
+        return tokens;
     }
 
     //if jwt expired, then return null.

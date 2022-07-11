@@ -1,5 +1,4 @@
 import { ConfigModule } from '@nestjs/config';
-import { AppGateway } from './gateway/socket.gateway';
 import { CacheModule, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -11,6 +10,7 @@ import { RedisModule } from './module/redis/redis.module';
 import { UtilModule } from './module/util/util.module';
 import { ProfileModule } from './module/profile/profile.module';
 import { RoomModule } from './module/room/room.module';
+import { ChatModule } from './chat/chat.module';
 
 @Module({ 
   imports: [
@@ -26,12 +26,12 @@ import { RoomModule } from './module/room/room.module';
     RedisModule,
     RoomModule,
     UtilModule,
-    ProfileModule
+    ProfileModule,
+    ChatModule
   ],
   controllers: [AppController],
   providers: [
     AppService,
-    AppGateway
   ],
 }) 
 export class AppModule {}

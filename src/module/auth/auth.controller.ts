@@ -30,6 +30,7 @@ export class AuthController {
         private connection: Connection
     ){}
 
+
     @ApiBody({type: LocalLoginDto})
     @UseGuards(LocalAuthGuard)
     @SetCode(101)
@@ -49,24 +50,20 @@ export class AuthController {
             await queryRunner.connect();
             await queryRunner.startTransaction();
     
-            let userId = null;
+            let userId = req.user.id;
             if(req.user.type != consts.LOCAL){
                 const updateAuthDto: UpdateAuthDto = {
                     oauth_refresh_token: null
                 }
-                //returns userId
-                userId = await this.authService.updateOAuthRefreshToken(req.user.email, req.user.type, updateAuthDto, queryRunner);
+                await this.authService.updateOAuthRefreshToken(req.user.email, req.user.type, updateAuthDto, queryRunner);
             }
-            else{
-                const user = await this.userService.findOneByEmail(req.user.email);
-                userId = user.id;
-            }
+
             const updateUserDto: UpdateUserDto = {
                 refresh_token: null
             }
 
             await this.userService.updateLocalRefreshToken(userId, updateUserDto, queryRunner);
-            await queryRunner.commitTransaction();        
+            await queryRunner.commitTransaction();
             return makeApiResponse(HttpStatus.OK);
         } catch(err){
             await queryRunner.rollbackTransaction();
@@ -83,6 +80,7 @@ export class AuthController {
     async oauthLogin(@Body() oauthLoginDto: OAuthLoginDto){
         //authentication with access_token
         //await this.authService.validateOAuthAccessToken(oauthLoginDto.oauth_access_token, oauthLoginDto.type);
+
         //if authenticated, login
         const queryRunner = this.connection.createQueryRunner();
         try{
@@ -117,7 +115,7 @@ export class AuthController {
         @Body() changePwDto: ChangePwDto
     ){
         if(req.user.type != consts.LOCAL) throw new OauthException(consts.OAUTH_CANT_CHANGE_PW, consts.CHANGE_PW_ERROR_CODE);
-        const {old_pw, new_pw} = changePwDto
+        const {old_pw, new_pw} = changePwDto;
         const email = req.user.email;
         const user = await this.authService.validateUser(email, old_pw);
 
@@ -127,7 +125,7 @@ export class AuthController {
         }
         
         const update = await this.userService.update(user.id, updateUserDto);
-        return makeApiResponse(HttpStatus.OK, req.user.tokens);
+        return makeApiResponse(HttpStatus.OK, req.tokens);
     }
 
     //check email exists
@@ -233,7 +231,7 @@ export class AuthController {
     @SetJwtAuth()
     @SetCode(107)
     @Post('quit')
-    async quit(@Request() req,){
+    async quit(@Request() req){
         const email = req.user.email;
         const update = await this.userService.remove(email);
         return makeApiResponse(HttpStatus.OK);

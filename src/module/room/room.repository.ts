@@ -1,3 +1,5 @@
+import { Ban } from './../../entities/ban.entity';
+import { User } from 'src/entities/user.entity';
 import { RoomJoin } from './../../entities/roomJoin.entity';
 import { RoomTag } from './../../entities/roomTag.entity';
 import { Tag } from './../../entities/tag.entity';
@@ -41,8 +43,14 @@ export class RoomRepository extends Repository<Room> {
             .getRawMany();
     }
 
-    async searchRoomsPaged(tagId?: number, searchTitle?: string, page: number = 0, take: number = 10){
-        const status = ['host', 'guest'];
+    async searchRoomsPaged(
+        userId: number, 
+        tagId: number, 
+        searchTitle: string, 
+        page: number = 0, 
+        take: number = 10
+    ){
+        const status = 'observer';
         let query = await this.createQueryBuilder('room')
             .distinct(true) 
             .select([
@@ -52,26 +60,38 @@ export class RoomRepository extends Repository<Room> {
                 'room.title',
                 'room.observer',
                 'room.nickname',
+                'room.is_occupied'
             ])
             .addSelect('tag_array.tags, tag_array.tagIds')
-            .addSelect('room_cnt.count')
+            .addSelect('observer.observers')
             .where('room.is_online = true')
             .andWhere('room.title LIKE :title', {title: `%${searchTitle}%`})
+            //ban list
+            .andWhere((qb) => {
+                const subQuery = qb.subQuery()
+                    .select('ban.bannedUserId')
+                    .from(Ban, 'ban')
+                    .where('ban.userId = :userId')
+                    .getQuery();
+                return "room.createUserId NOT IN " + subQuery;
+            })
+            .setParameter('userId', userId)
             .innerJoin('room.room_tag', 'room_tag')
             .leftJoin((qb) => {
-                return qb.select('room_tag.roomId AS roomId, ARRAY_AGG(tag.name ORDER BY tag.id) AS tags, ARRAY_AGG(tag.id ORDER BY tag.id) AS tagIds')
-                .from(RoomTag, 'room_tag')
-                .innerJoin('room_tag.tag', 'tag')
-                .groupBy('room_tag.roomId')
+                return qb.subQuery()
+                    .select('room_tag.roomId AS roomId, ARRAY_AGG(tag.name ORDER BY tag.id) AS tags, ARRAY_AGG(tag.id ORDER BY tag.id) AS tagIds')
+                    .from(RoomTag, 'room_tag')
+                    .innerJoin('room_tag.tag', 'tag')
+                    .groupBy('room_tag.roomId')
             }, 'tag_array', 'tag_array.roomId = room.id')
             .leftJoin((qb) => {
-                return qb.select('room_join.roomId AS roomId, COALESCE(COUNT(*)::INTEGER, 0) AS count')
+                return qb.select('room_join.roomId AS roomId, COUNT(*) AS observers')
                     .from(RoomJoin, 'room_join')
-                    .where('room_join.status IN (:...status)')
-                    .setParameter('status', status)
+                    .where('room_join.status = :status')
                     .groupBy('room_join.roomId')
-            }, 'room_cnt', 'room_cnt.roomId = room.id')
-
+                }, 'observer', 'observer.roomId = room.id')
+            .setParameter('status', status)
+                
 
         if(tagId != 0){
             query = query
@@ -85,4 +105,13 @@ export class RoomRepository extends Repository<Room> {
 
     }
 
+    async observerCount(roomId: number){
+        return this.createQueryBuilder('room')
+            .select('COUNT(room_join.*) AS count')
+            .where('room.id = :roomId', {roomId: roomId})
+            .andWhere('room_join.status = :observer', {observer : "observer"})
+            .leftJoin('room.room_join', 'room_join')
+            .groupBy('room_join.roomId')
+            .getRawOne()
+    }
 }

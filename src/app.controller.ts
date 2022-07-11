@@ -1,7 +1,10 @@
-import { Controller, Get, Inject, Param, Query, Redirect, Render } from '@nestjs/common';
+import { makeApiResponse, SetCode } from 'src/functions/util.functions';
+import { Controller, Get, Inject, Param, Query, Redirect, Render, HttpStatus } from '@nestjs/common';
 import { AppService } from './app.service';
 import { v4 as uuidv4 } from 'uuid';
 import { HttpAdapterHost } from '@nestjs/core';
+import { ApiOkResponse, ApiParam, ApiResponse } from '@nestjs/swagger';
+import { number, string } from 'joi';
 
 @Controller('main')
 export class AppController {
@@ -14,6 +17,14 @@ export class AppController {
   @Get('health')
   healthCheck(): string {
     return 'healthy';
+  }
+
+  @Get('service')
+  @SetCode(900)
+  serviceCheck(){
+    const start: number = 12;
+    const end: number = 16;
+    return makeApiResponse(HttpStatus.OK, {start, end});
   }
 
   @Get('')

@@ -60,9 +60,9 @@ export class UserRepository extends Repository<User> {
 
         if(typeof param === 'string') query = query.where('user.email = :email', {email: param})
         else if(typeof param === 'number') query = query.where('user.id = :userId', {userId: param})
-
         return await query.getRawMany();
     }
+    
 
 /* 
     async getMaxReviewName(userId: number){

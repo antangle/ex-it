@@ -4,6 +4,7 @@ import { Inquiry } from './inquiry.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToOne, OneToMany, Index, DeleteDateColumn } from 'typeorm';
 import { Auth } from './auth.entity';
 import { Setting } from './setting.entity';
+import { Ban } from './ban.entity';
 
 @Entity({name: 'user'})
 export class User {
@@ -25,6 +26,11 @@ export class User {
 
     @OneToMany(() => RoomJoin, roomJoin => roomJoin.user)
     room_join?: RoomJoin[];
+    
+    @OneToMany(() => Ban, ban => ban.user)
+    ban?: Ban[];
+
+
 
     @Column({
         default: true

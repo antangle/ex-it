@@ -12,10 +12,10 @@ export class ProfileService {
         private userRepository: UserRepository,
     ){}
 
-    async getProfileInfo(email: string, queryRunner?: QueryRunner){
+    async getProfileInfo(userId: number, queryRunner?: QueryRunner){
         const userRepository = queryRunner ? queryRunner.manager.getCustomRepository(UserRepository) : this.userRepository;
         try{
-            const user = await userRepository.getProfileQuery(email);
+            const user = await userRepository.getProfileQuery(userId);
             if(!user) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_SETTING_INFO_ERROR_CODE);
             return user;
         } catch(err){
@@ -24,10 +24,10 @@ export class ProfileService {
         }
     }
 
-    async getMyInfo(email: string, queryRunner?: QueryRunner){
+    async getMyInfo(userId: number, queryRunner?: QueryRunner){
         const userRepository = queryRunner ? queryRunner.manager.getCustomRepository(UserRepository) : this.userRepository;
         try{
-            const user = await userRepository.getReviewCount(email);
+            const user = await userRepository.getReviewCount(userId);
             if(!user) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_MY_INFO_ERROR_CODE);
             return user;
         } catch(err){
@@ -58,15 +58,13 @@ export class ProfileService {
                 
                 const auths = user.auth;
                 const types = [];
-                let authEmail = email;
                 for(let i=0; i<auths.length; ++i){
-                    if(auths[i].type == type) authEmail = auths[i].email;
                     types.push(auths[i].type);
                 }
 
                 return {
                     phone: user.phone,
-                    email: authEmail,
+                    email: email,
                     type: types
                 }
             }

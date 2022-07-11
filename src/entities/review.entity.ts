@@ -7,12 +7,21 @@ export class Review {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @JoinColumn()
-    @OneToOne(() => Room, room => room.review)
+    @ManyToOne(() => Room, room => room.review)
     room?: Room;
 
     @ManyToOne(() => User)
     user?: User;
+
+    @Column({
+        nullable: true
+    })
+    userId?: number;
+
+    @Column({
+        nullable: true
+    })
+    roomId?: number;
 
     @Column()
     title?: string;

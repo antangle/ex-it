@@ -139,11 +139,9 @@ export class UserService {
     }
   }
   
-  remove(email: string):Promise<UpdateResult> {
+  remove(userId: number):Promise<UpdateResult> {
     try{
-      return this.userRepository.softDelete({
-        email: email
-      });
+      return this.userRepository.softDelete(userId);
     } catch(err){
       throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.REMOVE_ERROR_CODE, err);
     }

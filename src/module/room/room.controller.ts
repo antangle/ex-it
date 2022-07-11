@@ -1,3 +1,4 @@
+import { ReviewDto } from './dto/review.dto';
 import { NumberDto } from './dto/number.dto';
 import { SearchRoomDto } from './dto/search-room.dto';
 import { UserService } from './../user/user.service';
@@ -5,12 +6,12 @@ import { User } from './../../entities/user.entity';
 import { RoomTag } from './../../entities/roomTag.entity';
 import { InsertResult, QueryRunner } from 'typeorm';
 import { CreateRoomDto } from './dto/create-room.dto';
-import { AuthorizedUser } from './../../types/user.d';
+import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Connection } from 'typeorm';
 import { Body, Controller, Get, Param, Post, Query, HttpStatus, ParseIntPipe, ParseArrayPipe } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { SetCode, SetJwtAuth, makeApiResponse } from 'src/functions/util.functions';
-import { AuthUser } from 'src/decorator/decorators';
+import { AuthToken, AuthUser } from 'src/decorator/decorators';
 import { Room } from 'src/entities/room.entity';
 import { ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
@@ -28,9 +29,9 @@ export class RoomController {
   @SetJwtAuth()
   @SetCode(201)
   @Get('tag')
-  async getMakeRoomTags(){
-    const mainTags = await this.roomService.getMainTags();
-    return makeApiResponse(HttpStatus.OK, mainTags);
+  async getMakeRoomTags(@AuthToken() tokens: Tokens){
+    const result = await this.roomService.getMainTags();
+    return makeApiResponse(HttpStatus.OK, {result, tokens});
   }
   
 /*   //gets topics corresponding to main tag
@@ -50,6 +51,7 @@ export class RoomController {
   @Post('create')
   async createRoom(
     @AuthUser() user: AuthorizedUser,
+    @AuthToken() tokens: Tokens,
     @Body() createRoomDto: CreateRoomDto,
   ){
     const queryRunner: QueryRunner = this.connection.createQueryRunner();
@@ -57,7 +59,7 @@ export class RoomController {
       await queryRunner.connect();
       await queryRunner.startTransaction();
       // get user info
-      const userInfo: User = await this.userService.findOneByEmail(user.email, queryRunner);
+      const userInfo: User = await this.userService.findUserById(user.id, queryRunner);
       createRoomDto.create_user = userInfo;
       createRoomDto.nickname = userInfo.nickname;
       createRoomDto.is_online = true;
@@ -95,7 +97,7 @@ export class RoomController {
       await queryRunner.commitTransaction();
       //todo: join socket!?
 
-      return makeApiResponse(HttpStatus.OK, roomname);
+      return makeApiResponse(HttpStatus.OK, {roomname, tokens});
     } catch(err){
       await queryRunner.rollbackTransaction();
       throw err;
@@ -108,7 +110,8 @@ export class RoomController {
   @SetCode(204)
   @Get('search')
   async searchRoom(
-    @AuthUser() user: AuthorizedUser, 
+    @AuthUser() user: AuthorizedUser,
+    @AuthToken() tokens: Tokens,
     @Query() query: SearchRoomDto
   ){
     let title = query.title;
@@ -116,8 +119,8 @@ export class RoomController {
 
     if(!title) title = '';
     if(!tagId) tagId = 0;
-    const rooms = await this.roomService.getSearchedRooms(tagId, title);
-    return makeApiResponse(HttpStatus.OK, rooms);
+    const result = await this.roomService.getSearchedRooms(user.id, tagId, title);
+    return makeApiResponse(HttpStatus.OK, {result, tokens});
   }
 
   //status: host, guest
@@ -125,8 +128,8 @@ export class RoomController {
   @SetCode(205)
   @Get('user_info')
   async getHostInfo(
-    @AuthUser() user: AuthorizedUser, 
     @Query('room_id', new ParseIntPipe()) roomId: number,
+    @AuthToken() tokens: Tokens,
     @Query('status') status: string
   ){
     const queryRunner: QueryRunner = this.connection.createQueryRunner();
@@ -134,15 +137,72 @@ export class RoomController {
       await queryRunner.connect();
       await queryRunner.startTransaction();
       if(!status) status = 'host';
-      const userId = await this.roomService.getUserId(roomId, status, queryRunner)
-      const info = await this.roomService.getUserInfo(userId, queryRunner);
+      const targetUserId = await this.roomService.getUserIdByStatus(roomId, status, queryRunner)
+      const result = await this.roomService.getUserInfo(targetUserId, queryRunner);
 
-      return makeApiResponse(HttpStatus.OK, info);
+      return makeApiResponse(HttpStatus.OK, {result, tokens});
     } catch(err){
       await queryRunner.rollbackTransaction();
       throw err;
     } finally{
       await queryRunner.release();
     }
+  }
+
+  @SetJwtAuth()
+  @SetCode(206)
+  @Get('end')
+  async getReviewInfo(
+    @AuthUser() user: AuthorizedUser,
+    @AuthToken() tokens: Tokens,
+    @Body('room_id') roomId: number
+  ){
+    const result = await this.roomService.findRoom(roomId);
+    const reviews = this.roomService.findReview();
+    return makeApiResponse(HttpStatus.OK, {...result, reviews, tokens});
+  }
+
+  @SetJwtAuth()
+  @SetCode(207)
+  @Post('end')
+  async createReview(
+    @Body() reviewDto: ReviewDto,
+    @AuthToken() tokens: Tokens,
+  ){
+    if(reviewDto.review_id < 5){
+      const review = this.roomService.makeReview(reviewDto);
+      await this.roomService.createReview(review);
+    }
+    
+    return makeApiResponse(HttpStatus.OK, tokens);
+  }
+
+  @SetJwtAuth()
+  @SetCode(208)
+  @Post('ban')
+  async banUser(
+    @AuthUser() user: AuthorizedUser,
+    @Body('room_id') roomId: number,
+    @AuthToken() tokens: Tokens,
+  ){
+    //roomId로 유저 찾아서 그 유저 밴.
+    const banUser = await this.roomService.findRoomUser(roomId);
+    const mainUser = {
+      id: user.id
+    }
+    const result = await this.roomService.banUser(mainUser, banUser);
+    return makeApiResponse(HttpStatus.OK, tokens);
+  }
+
+  //true if guest is talking, else false  
+  @SetJwtAuth()
+  @SetCode(208)
+  @Get('check')
+  async checkIfOccupied(
+    @Body('room_id') roomId: number,
+    @AuthToken() tokens: Tokens,
+  ){
+    const isOccupied = await this.roomService.checkOccupied(roomId);
+    return makeApiResponse(HttpStatus.OK, {isOccupied, tokens});
   }
 }

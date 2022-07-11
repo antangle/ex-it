@@ -1,3 +1,4 @@
+import { asyncApiOptions } from './config/asyncapi.config';
 import { GlobalExceptionFilter } from './filter/global.filter';
 import { SocketIoAdapter } from './config/socketio.adapter';
 import { NestFactory } from '@nestjs/core';
@@ -9,6 +10,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule } from '@nestjs/swagger';
 import swaggerConfig from './config/swagger.config';
 import { getServer } from './config/https.config';
+import { AsyncApiModule } from 'nestjs-asyncapi';
 
 async function bootstrap() {
   const devmode = process.env.DEVMODE;
@@ -44,7 +46,10 @@ async function bootstrap() {
   //swagger
   const document = SwaggerModule.createDocument(app, swaggerConfig);
   SwaggerModule.setup('apidocs', app, document);
-  
+
+  //asyncapi
+  const asyncapiDocument = await AsyncApiModule.createDocument(app, asyncApiOptions);
+  await AsyncApiModule.setup('/async-api', app, asyncapiDocument);
   app.useGlobalFilters(new GlobalExceptionFilter());
 
   //for localhost ssl config!!

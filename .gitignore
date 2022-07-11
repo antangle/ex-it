@@ -1,8 +1,10 @@
 # compiled output
 /dist
+/src/migrations
 /node_modules
 .env
 .env.*
+/static/cert
 
 # Logs
 logs

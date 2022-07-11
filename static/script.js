@@ -42,29 +42,32 @@ const initStream = async () => {
     
     peer = new Peer();
 
-    peer.on('open', userId => {
-        console.log('peer open');
+    peer.on('open', peerId => {
+        console.log(`peer open with id: ${peerId}`);
         const data = {
             roomId: roomId,
-            userId: userId
+            peerId: peerId,
+            nickname: 'mynickname'
         }
         socket.emit('join-room', data);
     });
     
-    //after join-room, server responses with 'user-connected'
-    socket.on('user-connected', (newUserId) => {
-        console.log('user-connected!', newUserId);
+    //if new user connects to socket with roomname, new user's peerId is given. call other peers with that id with mediaStream
+    socket.on('user-connected', (data) => {
+        const destPeerId = data.peerId;
+        const destNickname = data.nickname;
+        console.log(`user-connected! : ${destNickname}`, destPeerId);
         const video = document.createElement('video');
         
         //if new user connects, call that user with peerjs with userId.
-        const dataConnection = peer.call(newUserId, mediaStream);
+        const dataConnection = peer.call(destPeerId, mediaStream);
         //when newUser answers with newUserVideoStream, add that video. 
         dataConnection.on('stream', userVideoStream => {
             addVideoStream(video, userVideoStream, remoteVideo);
         });
     });
     
-    //peerjs answering call from original user
+    //peerjs answering call from origin user
     peer.on('call', dataConnection => {
         dataConnection.answer(mediaStream);
         const video = document.createElement('video');
@@ -118,7 +121,7 @@ $('html').keydown((e) => {
         const data = {
             roomId: roomId,
             msg: msg.val()
-        }        
+        }
         socket.emit('message', data);
         msg.val('');
     }

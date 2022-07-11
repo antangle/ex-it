@@ -18,7 +18,7 @@ export class Room {
   @OneToMany(() => RoomTag, roomTag => roomTag.room)
   room_tag?: RoomTag;
   
-  @OneToOne(() => Review, review => review.room)
+  @OneToMany(() => Review, review => review.room)
   review?: Review;
 
   @Column()

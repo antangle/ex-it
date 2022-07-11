@@ -55,8 +55,8 @@ export class UtilService {
     }
     makePayload(user: User, type: string = 'local'){
         return {
+            id: user.id,
             email: user.email,
-            nickname: user.nickname,
             type: type
         };
     }

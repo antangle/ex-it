@@ -11,6 +11,7 @@ declare global {
             tokens: ITokens,
             endpoint: number
             user: {
+                id: number,
                 email: string,
                 type: string
             }

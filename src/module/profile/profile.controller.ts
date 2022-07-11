@@ -1,7 +1,7 @@
-import { AuthorizedUser } from './../../types/user.d';
+import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Controller, Get, Request, HttpStatus, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthUser } from 'src/decorator/decorators';
+import { AuthToken, AuthUser } from 'src/decorator/decorators';
 import { SetCode, SetJwtAuth, makeApiResponse, parseReview } from 'src/functions/util.functions';
 import { Connection } from 'typeorm';
 import { ProfileService } from './profile.service';
@@ -18,35 +18,45 @@ export class ProfileController {
   @SetJwtAuth()
   @SetCode(201)
   @Get('setting')
-  async getProfile(@AuthUser() user: AuthorizedUser){
+  async getProfile(
+    @AuthUser() user: AuthorizedUser,
+    @AuthToken() tokens: Tokens
+    ){
       //testing!
       //const email = 'antangle2@naver.com';
       //const type = 'kakao';
-      const email = user.email;
-      const info = await this.profileService.getProfileInfo(email);
-      return makeApiResponse(HttpStatus.OK, info);
-  }
-
+      const userId = user.id;
+      const result = await this.profileService.getProfileInfo(userId);
+      return makeApiResponse(HttpStatus.OK, {result, tokens});
+    }
+    
   @SetJwtAuth()
   @SetCode(202)
   @Get('myinfo')
-  async getMyPage(@AuthUser() user: AuthorizedUser){
-    const reviews = await this.profileService.getMyInfo(user.email);
+  async getMyPage(
+    @AuthUser() user: AuthorizedUser,
+    @AuthToken() tokens: Tokens
+  ){
+    const userId = user.id;
+    const reviews = await this.profileService.getMyInfo(userId);
     const reviewData = parseReview(reviews);
     
     const result = {
       nickname: reviews[0].nickname,
       reviews: reviewData
     }
-    return makeApiResponse(HttpStatus.OK, result);
+    return makeApiResponse(HttpStatus.OK, {result, tokens});
   }
   
   @SetJwtAuth()
   @SetCode(203)
   @Get('myaccount')
-  async getMyAccount(@AuthUser() user: AuthorizedUser){    
-    const account = await this.profileService.getMyAccountInfo(user.email, user.type);
-    return makeApiResponse(HttpStatus.OK, account);
+  async getMyAccount(
+    @AuthUser() user: AuthorizedUser,
+    @AuthToken() tokens: Tokens
+  ){    
+    const result = await this.profileService.getMyAccountInfo(user.email, user.type);
+    return makeApiResponse(HttpStatus.OK, {result, tokens});
   }
 /*
   @SetJwtAuth()
