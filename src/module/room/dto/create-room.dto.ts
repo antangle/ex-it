@@ -1,43 +1,45 @@
 import { User } from './../../../entities/user.entity';
-import { IsArray, isBoolean, IsBoolean, IsDate, IsInt, IsNumber, IsOptional, isString, IsString, MaxLength, MinLength, ValidateNested } from "class-validator";
+import { IsArray, IsBoolean, IsDate, IsInt, IsOptional, IsString, MaxLength } from "class-validator";
+import { ApiHideProperty } from '@nestjs/swagger';
 
 export class CreateRoomDto {
 
+    @MaxLength(20)
     @IsString()
     title: string;    
     
     @IsBoolean()
     hardcore: boolean;
     
-    @IsNumber()
-    observer: number;
+    @IsBoolean()
+    observer: boolean;
     
+    @ApiHideProperty()
     @IsOptional()
     create_user?: User;
-
-    @IsOptional()
-    @IsNumber()
-    max_occupancy?: number;
     
-    @IsOptional()
+    @ApiHideProperty()
     @IsString()
+    @IsOptional()
     nickname?: string;
 
-    @IsOptional()
+    @ApiHideProperty()
     @IsString()
+    @IsOptional()
     is_online?: boolean;
 
-    @IsOptional()
+    @ApiHideProperty()
     @IsString()
+    @IsOptional()
     roomname: string;
     
-    @IsArray()
-    @IsString({each: true})
     @MaxLength(6, {each: true})
+    @IsString({each: true})
+    @IsArray()
     custom_tags: string[];
 
-    @IsArray()
     @IsInt({each: true})
+    @IsArray()
     tags: number[];
 
 }

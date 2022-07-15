@@ -15,7 +15,6 @@ export class AuthRepository extends Repository<Auth> {
                 type: type
             })
             .returning('*')
-            .updateEntity(true)
             .execute();
     }
 }

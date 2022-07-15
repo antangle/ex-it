@@ -1,3 +1,4 @@
+import { NotExistsException } from 'src/exception/not-exist.exception';
 import { UnhandledException } from './../../exception/unhandled.exception';
 import consts from 'src/consts/consts';
 import { DatabaseException } from './../../exception/database.exception';
@@ -12,24 +13,24 @@ export class ProfileService {
         private userRepository: UserRepository,
     ){}
 
-    async getProfileInfo(userId: number, queryRunner?: QueryRunner){
+    async getProfileInfo(userId: number, queryRunner?: QueryRunner): Promise<any>{
         const userRepository = queryRunner ? queryRunner.manager.getCustomRepository(UserRepository) : this.userRepository;
         try{
             const user = await userRepository.getProfileQuery(userId);
-            if(!user) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_SETTING_INFO_ERROR_CODE);
+            if(!user) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_SETTING_INFO_ERROR_CODE);
             return user;
         } catch(err){
-            if(err instanceof DatabaseException) throw err;
+            if(err instanceof NotExistsException) throw err;
             else throw new UnhandledException(this.getProfileInfo.name, consts.GET_SETTING_INFO_ERROR_CODE, err);
         }
     }
 
-    async getMyInfo(userId: number, queryRunner?: QueryRunner){
+    async getMyInfo(userId: number, queryRunner?: QueryRunner):Promise<any>{
         const userRepository = queryRunner ? queryRunner.manager.getCustomRepository(UserRepository) : this.userRepository;
         try{
-            const user = await userRepository.getReviewCount(userId);
-            if(!user) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_MY_INFO_ERROR_CODE);
-            return user;
+            const count = await userRepository.getReviewCount(userId);
+            if(!count) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_MY_INFO_ERROR_CODE);
+            return count;
         } catch(err){
             if(err instanceof DatabaseException) throw err;
             else throw new UnhandledException(this.getMyInfo.name, consts.GET_MY_INFO_ERROR_CODE, err);

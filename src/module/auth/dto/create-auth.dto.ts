@@ -1,11 +1,13 @@
-import { IsBoolean, IsDate, IsNumber, IsOptional, IsString } from "class-validator";
+import { OauthType } from './../../../consts/enum';
+import { IsBoolean, IsDate, IsEmail, IsEnum, IsNumber, IsOptional, IsString } from "class-validator";
+import { Status } from "src/consts/enum";
 
 export class CreateAuthDto {
 
-    @IsString()
+    @IsEmail()
     email?: string;
 
-    @IsString()
+    @IsEnum(OauthType)
     type?: string;
 
     @IsOptional()

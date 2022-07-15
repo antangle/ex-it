@@ -1,13 +1,13 @@
-import { UnauthorizedTokenException, BadRequestException } from './../exception/bad-request.exception';
 import { UtilService } from '../module/util/util.service';
 import consts from 'src/consts/consts';
-import { ITokens } from '../types/express';
 import { AuthService } from '../module/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { ExecutionContext, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-import { JwtAuthException } from 'src/exception/jwt.exception';
+import { BadRequestCustomException } from 'src/exception/bad-request.exception';
+import { UnauthorizedUserException } from 'src/exception/unauthorized.exception';
+import { TokenData } from 'src/response/response.dto';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -21,23 +21,20 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     async canActivate(context: ExecutionContext){
         const request: Request = context.switchToHttp().getRequest();
         const authorization: string = request.headers.authorization;
-        if(!authorization) throw new JwtAuthException(consts.JWT_NOT_EXIST, consts.JWT_STRATEGY_ERROR_CODE);
-
-
+        if(!authorization) throw new BadRequestCustomException(consts.JWT_NOT_EXIST, consts.JWT_STRATEGY_ERROR_CODE);
+        
         //at from Authorization, rt from custom header Refresh-Token
         const accessToken: string = authorization.replace('Bearer ', '').trim();
         const refreshToken: string = request.get(consts.REFRESH_TOKEN_HEADER);
-        
+        if(!refreshToken) throw new BadRequestCustomException(consts.JWT_NOT_EXIST, consts.JWT_STRATEGY_ERROR_CODE);
+
         let decoded = this.validateAccessToken(accessToken);
+        
         //if valid access token, then sign and return
         if(decoded) {
-            request.user = {
-                id: decoded.id,
-                email: decoded.email,
-                type: decoded.type
-            };
-            const tokens = this.signJwtToken(decoded);
-            tokens.refresh_token = refreshToken;
+            request.user = this.utilService.makePayload(decoded, decoded.type);
+            const tokens = this.utilService.signJwt(decoded);
+            tokens.refresh_token = null;
             request.tokens = tokens;
             return true;
         }
@@ -47,14 +44,14 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             decodedRefreshToken = this.jwtService.verify(refreshToken);
         }
         catch(err){
-            throw new JwtAuthException(consts.INVALID_JWT, consts.JWT_STRATEGY_ERROR_CODE, err);
+            throw new UnauthorizedUserException(consts.INVALID_JWT, consts.JWT_STRATEGY_ERROR_CODE, err);
         }
 
         //compare refresh tokens
         decoded = this.jwtService.decode(accessToken) as {[key: string]: any};
         const user = await this.authService.compareRefreshTokens(refreshToken, decoded.id);
 
-        let tokens: ITokens;
+        let tokens: TokenData;
         //sign new jwt tokens
         if(decodedRefreshToken.exp <= Date.now()/1000 + consts.ONE_DAY_IN_SECONDS && decodedRefreshToken.exp > Date.now()/1000){
             //update refresh token
@@ -62,26 +59,12 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         }
         else{
             tokens = this.utilService.signJwt(user, decoded.type);
-            tokens.refresh_token = refreshToken;
+            tokens.refresh_token = null;
         }
 
+        request.user = this.utilService.makePayload(decoded, decoded.type);
         request.tokens = tokens;
-        request.user = {
-            id: user.id,
-            email: user.email,
-            type: decoded.type
-        }
         return true;
-    }
-
-    private signJwtToken(decoded: any) {
-        const payload = this.utilService.makePayload({
-            id: decoded.id,
-            email: decoded.email,
-            nickname: decoded.nickname
-        }, decoded.type);
-        const tokens = this.utilService.signJwt(payload, decoded.type);
-        return tokens;
     }
 
     //if jwt expired, then return null.
@@ -97,7 +80,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             }
             //else throw
             else{
-                throw new JwtAuthException(consts.INVALID_JWT, consts.JWT_STRATEGY_ERROR_CODE, err);
+                throw new UnauthorizedUserException(consts.INVALID_JWT, consts.JWT_STRATEGY_ERROR_CODE, err);
             }
         }
     }

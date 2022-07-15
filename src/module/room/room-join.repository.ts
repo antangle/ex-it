@@ -1,3 +1,4 @@
+import { UpdateRoomJoinDto } from './dto/room-join-update.dto';
 import { RoomJoin } from '../../entities/roomJoin.entity';
 import { Repository } from 'typeorm';
 import { EntityRepository } from 'typeorm';
@@ -18,5 +19,20 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
             .addOrderBy('tag.name', 'ASC')
             .limit(consts.LIMIT_MOST_USED_TAGS)
             .getRawMany();
+    }
+
+    async updateTime(userId: number, roomId: number, updateRoomJoinDto: UpdateRoomJoinDto){
+        const status = ['host', 'guest'];
+        return await this.createQueryBuilder('room_join')
+            .update()
+            .set({
+                total_time: () => 'total_time + :total_time',
+                call_time: () => 'call_time + :call_time'
+            })
+            .where('userId = :userId', {userId: userId})
+            .andWhere('roomId = :roomId', {roomId: roomId})
+            .andWhere('status IN (:...status)', {status: status})
+            .setParameters(updateRoomJoinDto)
+            .execute();
     }
 }

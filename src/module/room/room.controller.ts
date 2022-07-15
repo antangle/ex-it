@@ -1,5 +1,9 @@
-import { ReviewDto } from './dto/review.dto';
-import { NumberDto } from './dto/number.dto';
+import { RoomIdDto } from './dto/number.dto';
+import { BaseOKResponseWithTokens } from 'src/response/response.dto';
+import { UserInfoDto } from './dto/user-info.dto';
+import { UpdateRoomDto } from './dto/update-room.dto';
+import { UpdateRoomJoinDto } from './dto/room-join-update.dto';
+import { RoomEndDto } from './dto/room-end.dto';
 import { SearchRoomDto } from './dto/search-room.dto';
 import { UserService } from './../user/user.service';
 import { User } from './../../entities/user.entity';
@@ -10,11 +14,16 @@ import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Connection } from 'typeorm';
 import { Body, Controller, Get, Param, Post, Query, HttpStatus, ParseIntPipe, ParseArrayPipe } from '@nestjs/common';
 import { RoomService } from './room.service';
-import { SetCode, SetJwtAuth, makeApiResponse } from 'src/functions/util.functions';
+import { SetCode, SetJwtAuth, makeApiResponse, ApiResponses } from 'src/functions/util.functions';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
 import { Room } from 'src/entities/room.entity';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
+import { TagResponse } from './response/tag.response';
+import { CreateRoomResponse } from './response/create.response';
+import { SearchRoomResponse } from './response/search.response';
+import { UserInfoResponse } from './response/user-info.response';
+import { GetEndRoomResponse } from './response/end.response';
 
 @ApiTags('room')
 @Controller('room')
@@ -23,15 +32,22 @@ export class RoomController {
     private readonly userService: UserService,
     private readonly roomService: RoomService,
     private connection: Connection
-    ) {}
+  ) {}
 
+
+  
   //gets main tag for makeroom
+  @ApiOperation({
+    summary: 'get main tags for room - create',
+    description: 'only available when logged in!',
+  })
+  @ApiResponses(TagResponse)
   @SetJwtAuth()
   @SetCode(201)
   @Get('tag')
   async getMakeRoomTags(@AuthToken() tokens: Tokens){
-    const result = await this.roomService.getMainTags();
-    return makeApiResponse(HttpStatus.OK, {result, tokens});
+    const tags = await this.roomService.getMainTags();
+    return makeApiResponse(HttpStatus.OK, {tags, tokens});
   }
   
 /*   //gets topics corresponding to main tag
@@ -45,7 +61,14 @@ export class RoomController {
     return makeApiResponse(HttpStatus.OK, topics);
   } */
 
-  //todo: test
+  @ApiOperation({
+    summary: 'create room',
+    description: 'right after response, call event - join with nickname, roomname to connect socket',
+  })
+  @ApiResponses(CreateRoomResponse)
+  @ApiBody({
+    type: CreateRoomDto
+  })
   @SetJwtAuth()
   @SetCode(203)
   @Post('create')
@@ -58,21 +81,23 @@ export class RoomController {
     try{
       await queryRunner.connect();
       await queryRunner.startTransaction();
+      const roomname =  randomUUID();
+      
       // get user info
       const userInfo: User = await this.userService.findUserById(user.id, queryRunner);
       createRoomDto.create_user = userInfo;
       createRoomDto.nickname = userInfo.nickname;
       createRoomDto.is_online = true;
-      createRoomDto.roomname = randomUUID();
+      createRoomDto.roomname = roomname;
 
+      
       const { tags, custom_tags, ...roomDto } = createRoomDto;
       const customTags = custom_tags;
-
+      
       // make roomtags instance with tags
       // save room
       const room = await this.roomService.createRoom(roomDto, queryRunner);
       const roomId = room.raw[0].id;
-      const roomname = room.raw[0].roomname;
 
       // check custom tags
       const parsedCustomTags = this.roomService.parseCustomTags(customTags);
@@ -88,16 +113,15 @@ export class RoomController {
 
       // save tag
       const roomTags: RoomTag[] = this.roomService.parseSetToRoomTags(tagSet, roomId);
-      const res = await this.roomService.saveRoomTags(roomTags, queryRunner);
+      await this.roomService.saveRoomTags(roomTags, queryRunner);
 
       // join host to that room
       const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, userInfo);
-      const roomJoin = await this.roomService.joinRoom(roomJoinDto, queryRunner);
+      await this.roomService.joinRoom(roomJoinDto, queryRunner);
 
       await queryRunner.commitTransaction();
-      //todo: join socket!?
 
-      return makeApiResponse(HttpStatus.OK, {roomname, tokens});
+      return makeApiResponse(HttpStatus.OK, {roomname, nickname: userInfo.nickname, tokens});
     } catch(err){
       await queryRunner.rollbackTransaction();
       throw err;
@@ -105,42 +129,56 @@ export class RoomController {
       await queryRunner.release();
     }
   }
-  
+
+  @ApiOperation({
+    summary: 'search room',
+    description: `
+      you can give search options: tag_id, title. if not needed, simply do not pass argument
+      you can also pass pagination options via page, take. default value is page=30, take=0
+      `,
+  })
+  @ApiResponses(SearchRoomResponse)
   @SetJwtAuth()
   @SetCode(204)
   @Get('search')
   async searchRoom(
     @AuthUser() user: AuthorizedUser,
     @AuthToken() tokens: Tokens,
-    @Query() query: SearchRoomDto
+    @Query() searchRoomDto: SearchRoomDto
   ){
-    let title = query.title;
-    let tagId = query.tag_id;
-
-    if(!title) title = '';
-    if(!tagId) tagId = 0;
-    const result = await this.roomService.getSearchedRooms(user.id, tagId, title);
-    return makeApiResponse(HttpStatus.OK, {result, tokens});
+    const {tag_id, title, take, page} = searchRoomDto;
+    const rooms = await this.roomService.getSearchedRooms(user.id, tag_id, title, page, take);
+    return makeApiResponse(HttpStatus.OK, {rooms, tokens});
   }
 
+  @ApiOperation({
+    summary: 'get user information of host or guest.',
+    description: `
+      specify status: host or guest. if not specified, host is set to default
+    `,
+  })
+  @ApiResponses(UserInfoResponse)
   //status: host, guest
   @SetJwtAuth()
   @SetCode(205)
   @Get('user_info')
   async getHostInfo(
-    @Query('room_id', new ParseIntPipe()) roomId: number,
+    @Query() userInfoDto: UserInfoDto,
     @AuthToken() tokens: Tokens,
-    @Query('status') status: string
   ){
     const queryRunner: QueryRunner = this.connection.createQueryRunner();
+    const roomId = userInfoDto.room_id;
+    const status = userInfoDto.status;
     try{
       await queryRunner.connect();
       await queryRunner.startTransaction();
-      if(!status) status = 'host';
-      const targetUserId = await this.roomService.getUserIdByStatus(roomId, status, queryRunner)
+
+      const targetUserId = await this.roomService.getUserIdFromStatus(roomId, status, queryRunner);
       const result = await this.roomService.getUserInfo(targetUserId, queryRunner);
 
-      return makeApiResponse(HttpStatus.OK, {result, tokens});
+      await queryRunner.commitTransaction();
+
+      return makeApiResponse(HttpStatus.OK, {...result, tokens});
     } catch(err){
       await queryRunner.rollbackTransaction();
       throw err;
@@ -149,34 +187,88 @@ export class RoomController {
     }
   }
 
+  @ApiOperation({
+    summary: 'get information for room-end page',
+    description: `nothing special`,
+  })
+  @ApiResponses(GetEndRoomResponse)
   @SetJwtAuth()
   @SetCode(206)
   @Get('end')
   async getReviewInfo(
-    @AuthUser() user: AuthorizedUser,
     @AuthToken() tokens: Tokens,
-    @Body('room_id') roomId: number
+    @Query('room_id', new ParseIntPipe()) roomId: number
   ){
     const result = await this.roomService.findRoom(roomId);
     const reviews = this.roomService.findReview();
     return makeApiResponse(HttpStatus.OK, {...result, reviews, tokens});
   }
 
+
+  @ApiOperation({
+    summary: 'end room',
+    description: 'continue: true - 대화방유지 false - 메인으로 이동',
+  })
+  @ApiResponses(BaseOKResponseWithTokens)
+  @ApiBody({
+    type: RoomEndDto
+  })
   @SetJwtAuth()
   @SetCode(207)
   @Post('end')
-  async createReview(
-    @Body() reviewDto: ReviewDto,
+  async endRoom(
+    @Body() roomEndDto: RoomEndDto,
+    @AuthUser() user: AuthorizedUser,
     @AuthToken() tokens: Tokens,
   ){
-    if(reviewDto.review_id < 5){
-      const review = this.roomService.makeReview(reviewDto);
-      await this.roomService.createReview(review);
+    const queryRunner: QueryRunner = this.connection.createQueryRunner();
+    try{
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+
+      //update room_join tables
+      const userId = user.id;
+      const roomId = roomEndDto.room_id;
+      const updateRoomJoinDto: UpdateRoomJoinDto = {
+        total_time: roomEndDto.total_time,
+        call_time: roomEndDto.call_time
+      }
+      
+      const updateRoomDto: UpdateRoomDto = {
+        is_online: false
+      }
+      if(!roomEndDto.continue) await this.roomService.updateRoomOnline(roomId, updateRoomDto);
+
+      await this.roomService.updateRoomJoin(userId, roomId, updateRoomJoinDto, queryRunner);
+
+      if(roomEndDto.review_mode < 5){
+        //get fellow id from roomJoin
+        let status = roomEndDto.status == 'guest' ? 'host' : 'guest';
+        const fellowId = await this.roomService.getUserIdFromStatus(roomId, status);
+        
+        const review = this.roomService.makeReview(roomEndDto, fellowId);
+        await this.roomService.createReview(review, queryRunner);
+      }
+
+      await queryRunner.commitTransaction();
+      
+      return makeApiResponse(HttpStatus.OK, {tokens});
+    } catch(err){
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
     }
-    
-    return makeApiResponse(HttpStatus.OK, tokens);
   }
 
+  @ApiOperation({
+    summary: 'ban user',
+    description: '해당 room의 host를 ban함',
+  })
+  @ApiResponses(BaseOKResponseWithTokens)
+  @ApiBody({
+    type: RoomIdDto
+  })
   @SetJwtAuth()
   @SetCode(208)
   @Post('ban')
@@ -191,9 +283,17 @@ export class RoomController {
       id: user.id
     }
     const result = await this.roomService.banUser(mainUser, banUser);
-    return makeApiResponse(HttpStatus.OK, tokens);
+    return makeApiResponse(HttpStatus.OK, {tokens});
   }
 
+  @ApiOperation({
+    summary: 'check if room is occupied',
+    description: '해당 room의 guest자리가 비어있는지 체크. 차있으면 true, 비어있으면 false',
+  })
+  @ApiResponses(BaseOKResponseWithTokens)
+  @ApiBody({
+    type: RoomIdDto
+  })
   //true if guest is talking, else false  
   @SetJwtAuth()
   @SetCode(208)

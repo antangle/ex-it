@@ -1,10 +1,14 @@
+import { NoNicknameAvailableException } from './../exception/no-nickname.exception';
+import { NotExistsException } from '../exception/not-exist.exception';
+import { BadRequestCustomException } from 'src/exception/bad-request.exception';
+import { UnauthorizedUserException } from './../exception/unauthorized.exception';
 import { QueryFailedError } from 'typeorm';
 import { JwtAuthException } from './../exception/jwt.exception';
 import { UnhandledException } from './../exception/unhandled.exception';
 import { DatabaseException, UserExistsException } from './../exception/database.exception';
 import { CustomError } from './../exception/custom.exception';
 import { OauthException } from './../exception/axios.exception';
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { BaseExceptionFilter, Reflector } from '@nestjs/core';
 import { generateCode, makeApiResponse } from 'src/functions/util.functions';
@@ -17,55 +21,53 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
     const ctx = host.switchToHttp();
     const req = ctx.getRequest<Request>();
     const res = ctx.getResponse<Response>();
+
+    //for logging
     let code = req.endpoint;
     let msg = 'something wrong';
     let data;
 
-    if(exception instanceof CustomError){
-      console.log(exception.constructor);
-      console.log('global error handler: ', (exception as CustomError).data);
-    }
-
+    console.log(exception.constructor);
+    console.log(exception);
+    
+    //for api response
+    let apiResponse;
     switch(exception.constructor){
+      case UnauthorizedUserException:
+        apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, consts.UNAUTHORIZED_USER)
+        break;
       case OauthException:
-        code = generateCode(req.endpoint, (exception as OauthException).code);
-        msg = (exception as OauthException).message;
-        break;       
+        apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, consts.UNAUTHORIZED_USER)
+        break;
+      case BadRequestCustomException:
+        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, null, consts.BAD_REQUEST)
+        break;
+      case BadRequestException:
+        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, null, consts.BAD_REQUEST)
+        break;
+      case NotExistsException:
+        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, null, consts.TARGET_NOT_EXIST)
+        break;
+      case NoNicknameAvailableException:
+        apiResponse = makeApiResponse(HttpStatus.GATEWAY_TIMEOUT, null, consts.TOO_MANY_TRIES)
+        break;
       case DatabaseException:
-        code = generateCode(req.endpoint, (exception as DatabaseException).code);
-        msg = (exception as DatabaseException).message;
+        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.DATABASE_ERROR)
         break;
       case UnhandledException:
-        code = generateCode(req.endpoint, (exception as UnhandledException).code);
-        msg = consts.UNHANDLED_EXCEPTION;
-        const methodName = (exception as UnhandledException).message;
-        console.log(methodName);
-        break; 
-      case JwtAuthException:
-        code = generateCode(req.endpoint, (exception as UnhandledException).code);
-        msg = (exception as UnhandledException).message;
-        break; 
+        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
+        break;
       case UserExistsException:
-        code = generateCode(req.endpoint, (exception as UnhandledException).code);
-        msg = (exception as UnhandledException).message;
-        data = {
-          emailAvailable: false
-        };
-        break; 
-      case CustomError:
-        code = generateCode(req.endpoint, (exception as CustomError).code);
-        msg = (exception as CustomError).message;
-        data = null;
+        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, data, consts.DUPLICATE_ACCOUNT_ERROR)
+        break;
+      case NotFoundException:
+        apiResponse = makeApiResponse(HttpStatus.NOT_FOUND, null, consts.NOT_FOUND)
         break;
       default:
-        console.log((exception as Error))
+        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
+        break;
     }
 
-
-    console.log(`code: ${code}`);
-    console.log(`msg: ${msg}`);
-  
-
-    res.json(makeApiResponse(code, data, msg));
+    res.json(apiResponse);
   }
 }

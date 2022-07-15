@@ -1,5 +1,8 @@
+import { UpdateRoomDto } from './dto/update-room.dto';
+import { NotExistsException } from './../../exception/not-exist.exception';
+import { UpdateRoomJoinDto } from './dto/room-join-update.dto';
 import { Ban } from './../../entities/ban.entity';
-import { ReviewDto } from './dto/review.dto';
+import { RoomEndDto } from './dto/room-end.dto';
 import { reviewMapperArray } from './../../functions/util.functions';
 import { Review } from './../../entities/review.entity';
 import { parseReview } from 'src/functions/util.functions';
@@ -12,7 +15,7 @@ import { UserRepository } from './../user/user.repository';
 import { User } from './../../entities/user.entity';
 import { UnhandledException } from './../../exception/unhandled.exception';
 import { DatabaseException } from './../../exception/database.exception';
-import { Repository, InsertResult } from 'typeorm';
+import { Repository, InsertResult, TypeORMError, In } from 'typeorm';
 import { Tag } from './../../entities/tag.entity';
 import { QueryRunner } from 'typeorm';
 import { Injectable } from '@nestjs/common';
@@ -42,10 +45,10 @@ export class RoomService {
                     'id': 'ASC'
                 }
             });
-            if(!tags) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_MAIN_TAGS_ERROR_CODE);
+            if(!tags) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_MAIN_TAGS_ERROR_CODE);
             return tags;
         } catch(err){
-            if(err instanceof DatabaseException) throw err;
+            if(err instanceof NotExistsException) throw err;
             else throw new UnhandledException(this.getMainTags.name, consts.GET_MAIN_TAGS_ERROR_CODE, err);
         }
     }
@@ -65,7 +68,7 @@ export class RoomService {
                 .execute();
             return tags.raw;
         } catch(err){
-            if(err instanceof DatabaseException) throw err;
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.GET_MAIN_TAGS_ERROR_CODE, err);
             else throw new UnhandledException(this.getMainTags.name, consts.GET_MAIN_TAGS_ERROR_CODE, err);
         }
     }
@@ -90,10 +93,9 @@ export class RoomService {
         const roomRepository = queryRunner.manager.getCustomRepository(RoomRepository);
         try{
             const room = await roomRepository.insert(createRoomDto);
-            if(!room.identifiers[0].id) throw new DatabaseException(consts.INSERT_FAILED, consts.CREATE_ROOM_ERROR_CODE);
             return room;
         } catch(err){
-            if(err instanceof DatabaseException) throw err;
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.CREATE_ROOM_ERROR_CODE, err);
             else throw new UnhandledException(this.createRoom.name, consts.CREATE_ROOM_ERROR_CODE, err);
         }
     }
@@ -130,7 +132,7 @@ export class RoomService {
                 .values(roomtags)
                 .execute();
         } catch(err){
-            if(err instanceof DatabaseException) throw err;
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);
             else throw new UnhandledException(this.saveRoomTags.name, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);
         }
     }
@@ -145,7 +147,7 @@ export class RoomService {
                 .execute();
 
         } catch(err){
-            if(err instanceof DatabaseException) throw err;
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.CREATE_REVIEW_ERROR_CODE, err);
             else throw new UnhandledException(this.createReview.name, consts.CREATE_REVIEW_ERROR_CODE, err);
         }
     }
@@ -165,8 +167,8 @@ export class RoomService {
         userId: number, 
         tagId: number, 
         searchTitle: string, 
-        page: number = 0, 
-        take: number = 10, 
+        page: number, 
+        take: number, 
         queryRunner?: QueryRunner
     ){
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
@@ -174,7 +176,7 @@ export class RoomService {
             const rooms = await roomRepository.searchRoomsPaged(userId, tagId, searchTitle, page, take);
             return rooms;
         } catch(err){
-            if(err instanceof DatabaseException) throw err;
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.GET_ALL_ROOMS_ERROR_CODE, err);
             else throw new UnhandledException(this.getMainTags.name, consts.GET_ALL_ROOMS_ERROR_CODE, err);
         }
     }
@@ -184,25 +186,8 @@ export class RoomService {
         try{
             return await roomJoinRepository.insert(roomJoinDto);            
         } catch(err){
-            if(err instanceof DatabaseException) throw err;
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.JOIN_ROOM_ERROR_CODE, err);
             else throw new UnhandledException(this.getMainTags.name, consts.JOIN_ROOM_ERROR_CODE, err);
-        }
-    }
-
-    async getUserIdByStatus(roomId: number, status: string, queryRunner?: QueryRunner){
-        const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
-        try{
-            const roomJoin = await roomJoinRepository.findOne({
-                where: {
-                    roomId: roomId,
-                    status: status
-                }
-            });
-            if(!roomJoin.userId) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_USER_ID_ERROR_CODE);
-            return roomJoin.userId;
-        } catch(err){
-            if(err instanceof DatabaseException) throw err;
-            else throw new UnhandledException(this.getUserIdByStatus.name, consts.GET_USER_ID_ERROR_CODE, err);
         }
     }
 
@@ -219,6 +204,49 @@ export class RoomService {
         } catch(err){
             if(err instanceof DatabaseException) throw err;
             else throw new UnhandledException(this.findRoomUser.name, consts.FIND_ROOM_USER, err);
+        }
+    }
+
+    async updateRoomJoin(userId: number, roomId: number, updateRoomJoinDto: UpdateRoomJoinDto, queryRunner?: QueryRunner){
+        const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
+        try{
+            await roomJoinRepository.updateTime(userId, roomId, updateRoomJoinDto);
+
+        } catch(err){
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_JOIN_ERROR_CODE, err);
+            else throw new UnhandledException(this.updateRoomJoin.name, consts.UPDATE_ROOM_JOIN_ERROR_CODE, err);
+        }
+    }
+
+    async getUserIdFromStatus(roomId: number, status: string, queryRunner?: QueryRunner): Promise<number>{
+        const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
+        try{            
+            const roomJoin = await roomJoinRepository.findOne({
+                where: {
+                    roomId: roomId,
+                    status: status
+                },
+                order: {
+                    created_at: 'DESC'
+                },
+            })
+            if(!roomJoin) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_USERID_FROM_STATUS_ERROR_CODE);
+
+            return roomJoin.userId;
+        } catch(err){
+            if(err instanceof NotExistsException) throw err;
+            else if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.GET_USERID_FROM_STATUS_ERROR_CODE, err);
+            else throw new UnhandledException(this.getUserIdFromStatus.name, consts.GET_USERID_FROM_STATUS_ERROR_CODE, err);
+        }
+    }
+
+    async updateRoomOnline(roomId: number, updateRoomDto: UpdateRoomDto, queryRunner?: QueryRunner){
+        const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
+        try{
+            return await roomRepository.update(roomId, updateRoomDto);
+        } catch(err){
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_ONLINE_ERROR_CODE, err);
+            else throw new UnhandledException(this.updateRoomOnline.name, consts.UPDATE_ROOM_ONLINE_ERROR_CODE, err);
         }
     }
 
@@ -267,10 +295,11 @@ export class RoomService {
             if(!room) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.FIND_ROOM_ERROR_CODE);
             
             let countObservers = await roomRepository.observerCount(roomId);
-            let observers = countObservers.count
-            if(!observers) observers = 0;
+            let observers;
+            if(!countObservers) observers = 0;
+            else observers = countObservers.count
 
-            return {room, count: observers};
+            return {room, observer_count: observers};
         } catch(err){
             if(err instanceof DatabaseException) throw err;
             else throw new UnhandledException(this.findRoom.name, consts.FIND_ROOM_ERROR_CODE, err);
@@ -281,9 +310,9 @@ export class RoomService {
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
             const room = await roomRepository.findOne(roomId);
-            return !room.is_occupied;
+            return room.is_occupied;
         } catch(err){
-            if(err instanceof DatabaseException) throw err;
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.CHECK_OCCUPIED_ERROR_CODE, err);
             else throw new UnhandledException(this.checkOccupied.name, consts.CHECK_OCCUPIED_ERROR_CODE, err);
         }
     }
@@ -300,12 +329,12 @@ export class RoomService {
         return parsed;
     }
 
-    makeReview(reviewDto: ReviewDto): Review{
+    makeReview(roomEndDto: RoomEndDto, fellow_id: number): Review {
         return {
-            mode: reviewDto.review_id + 1,
-            title: reviewMapperArray[reviewDto.review_id + 1],
-            user: {id: reviewDto.host_id},
-            room: {id: reviewDto.room_id}
+            mode: roomEndDto.review_mode+ 1,
+            title: reviewMapperArray[roomEndDto.review_mode + 1],
+            user: {id: fellow_id},
+            room: {id: roomEndDto.room_id}
         }
     }
 

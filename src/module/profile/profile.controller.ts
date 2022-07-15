@@ -1,20 +1,31 @@
+import { OAuthSignInDto } from './../auth/dto/oauth-siginin.dto';
+import { BaseOKResponseWithTokens } from 'src/response/response.dto';
 import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Controller, Get, Request, HttpStatus, Query } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
-import { SetCode, SetJwtAuth, makeApiResponse, parseReview } from 'src/functions/util.functions';
+import { SetCode, SetJwtAuth, makeApiResponse, parseReview, ApiResponses } from 'src/functions/util.functions';
 import { Connection } from 'typeorm';
 import { ProfileService } from './profile.service';
 import { DateDto } from './dto/date.dto';
+import { SettingResponse } from './response/profile.response';
+import { MyInfoResponse } from './response/myinfo.response';
+import { MyAccountResponse } from './response/myaccount.response';
 
-@ApiTags('mypage')
-@Controller('mypage')
+@ApiTags('profile')
+@Controller('profile')
 export class ProfileController {
   constructor(
     private readonly profileService: ProfileService,
     private connection: Connection
     ) {}
-    
+  
+
+  @ApiOperation({
+    summary: '유저 프로필 info',
+    description: 'mypage/setting에 필요한 정보들 모음',
+  })
+  @ApiResponses(SettingResponse)
   @SetJwtAuth()
   @SetCode(201)
   @Get('setting')
@@ -22,14 +33,16 @@ export class ProfileController {
     @AuthUser() user: AuthorizedUser,
     @AuthToken() tokens: Tokens
     ){
-      //testing!
-      //const email = 'antangle2@naver.com';
-      //const type = 'kakao';
       const userId = user.id;
       const result = await this.profileService.getProfileInfo(userId);
-      return makeApiResponse(HttpStatus.OK, {result, tokens});
+      return makeApiResponse(HttpStatus.OK, {...result, tokens});
     }
-    
+  
+  @ApiOperation({
+    summary: 'myinfo 스탯',
+    description: 'myinfo_stat_디자인2 에 필요한 정보',
+  })
+  @ApiResponses(MyInfoResponse)
   @SetJwtAuth()
   @SetCode(202)
   @Get('myinfo')
@@ -45,9 +58,14 @@ export class ProfileController {
       nickname: reviews[0].nickname,
       reviews: reviewData
     }
-    return makeApiResponse(HttpStatus.OK, {result, tokens});
+    return makeApiResponse(HttpStatus.OK, {...result, tokens});
   }
   
+  @ApiOperation({
+    summary: 'mypage - 내계정',
+    description: 'mypage - 내계정에 필요한 정보',
+  })
+  @ApiResponses(MyAccountResponse)
   @SetJwtAuth()
   @SetCode(203)
   @Get('myaccount')
@@ -56,7 +74,7 @@ export class ProfileController {
     @AuthToken() tokens: Tokens
   ){    
     const result = await this.profileService.getMyAccountInfo(user.email, user.type);
-    return makeApiResponse(HttpStatus.OK, {result, tokens});
+    return makeApiResponse(HttpStatus.OK, {...result, tokens});
   }
 /*
   @SetJwtAuth()

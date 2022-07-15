@@ -1,9 +1,9 @@
-validateOAuthAccessToken 체크 v
+validateOAuthAccessToken 체크       v
 
-탈퇴시 5일동안 재가입 불가 ban
+탈퇴시 5일동안 재가입 불가 ban        
 
-CHAT
-redis cache DB - save chat logs
+CHAT                                v
+redis cache DB - save chat logs     x!
 
 VOICE CHAT
 
@@ -14,3 +14,7 @@ user_info                           v
 대화방 만들기 태그 변경               v
 make review                         v
 parent child category study         v
+
+대화방 유지 기능
+- call time 계산 기능 수정           v
+- room end 시 room_join의 host, guest 시간 update

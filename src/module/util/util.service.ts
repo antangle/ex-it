@@ -1,3 +1,5 @@
+import { AuthorizedUser } from './../../types/user.d';
+import { TokenData } from 'src/response/response.dto';
 import { Observable, lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { User } from 'src/entities/user.entity';
@@ -53,14 +55,19 @@ export class UtilService {
     makeRandomNickname(){
         return Math.random().toString(36).slice(2,8);
     }
-    makePayload(user: User, type: string = 'local'){
-        return {
+
+    makePayload(user: User | any, type: string = 'local'): AuthorizedUser{
+        let payload: AuthorizedUser = {
             id: user.id,
             email: user.email,
             type: type
         };
+        if(user.auth) payload.authId = user.auth[0].id;
+        else if(user.authId) payload.authId = user.authId;
+        return payload;
     }
-    signJwt(user: User, type: string = consts.LOCAL){
+
+    signJwt(user: User | any, type: string = consts.LOCAL): TokenData{
         const payload = this.makePayload(user, type);
         const access_token = this.jwtService.sign(payload, {
             expiresIn: consts.JWT_ACCESS_TOKEN_EXP

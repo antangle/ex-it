@@ -47,20 +47,20 @@ export class RoomRepository extends Repository<Room> {
         userId: number, 
         tagId: number, 
         searchTitle: string, 
-        page: number = 0, 
-        take: number = 10
+        page: number, 
+        take: number
     ){
         const status = 'observer';
         let query = await this.createQueryBuilder('room')
             .distinct(true) 
             .select([
                 'room.id', 
-                'room.hardcore', 
-                'room.created_at', 
-                'room.title',
-                'room.observer',
-                'room.nickname',
-                'room.is_occupied'
+                'room.hardcore AS hardcore', 
+                'room.created_at AS created_at', 
+                'room.title AS title',
+                'room.observer AS observer',
+                'room.nickname AS nickname',
+                'room.is_occupied AS is_occupied'
             ])
             .addSelect('tag_array.tags, tag_array.tagIds')
             .addSelect('observer.observers')

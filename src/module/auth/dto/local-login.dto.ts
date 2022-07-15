@@ -1,13 +1,17 @@
 import { ApiProperty } from "@nestjs/swagger";
-import { IsString } from "class-validator";
+import { IsEmail, IsString, Matches, MaxLength, MinLength } from "class-validator";
 
 export class LocalLoginDto {
 
-    @ApiProperty()
-    @IsString()
+    @ApiProperty({
+        default: 'testuser'
+    })
+    @IsEmail()
     email?: string;
     
-    @ApiProperty()
+    @ApiProperty({
+        default: 'test'
+    })
     @IsString()
     password?: string;
 

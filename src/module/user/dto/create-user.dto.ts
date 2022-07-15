@@ -1,19 +1,22 @@
-import { IsBoolean, IsDate, IsNumber, IsOptional, IsString } from "class-validator";
+import { ApiHideProperty } from "@nestjs/swagger";
+import { IsBoolean, IsDate, IsEmail, IsNumber, IsOptional, IsString } from "class-validator";
 
 export class CreateUserDto {
 
+    @IsEmail()
     @IsString()
     email?: string;
 
-    @IsOptional()
     @IsString()
+    @IsOptional()
     password?: string;
     
     @IsString()
     phone?: string;
 
-    @IsOptional()
+    @ApiHideProperty()
     @IsString()
+    @IsOptional()
     nickname?: string;
 
     @IsBoolean()
@@ -22,12 +25,12 @@ export class CreateUserDto {
     @IsBoolean()
     personal_info_terms?: boolean;
 
-    @IsOptional()
     @IsString()
+    @IsOptional()
     refresh_token?: string;
 
-    @IsOptional()
     @IsBoolean()
-    is_authenticated?: boolean;
+    @IsOptional()
+    is_authenticated?: boolean = true;
 
 }

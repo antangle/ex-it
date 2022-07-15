@@ -21,6 +21,16 @@ export class RoomJoin {
 
     @Column()
     userId?: number;
+    
+    @Column({
+        default: 0
+    })
+    total_time?: number;
+    
+    @Column({
+        default: 0
+    })
+    call_time?: number;
 
     @CreateDateColumn()
     created_at?: Date;

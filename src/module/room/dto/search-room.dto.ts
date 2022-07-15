@@ -4,14 +4,28 @@ import { Transform } from 'class-transformer';
 
 export class SearchRoomDto {
 
-    @IsOptional()
     @Transform(({value}) => {
         return isNaN(value) ? value : parseInt(value);
     })
     @IsNumber()
-    tag_id?: number;
-
     @IsOptional()
+    tag_id?: number = 0;
+
     @IsString()
-    title?: string;
+    @IsOptional()
+    title?: string = '';
+
+    @Transform(({value}) => {
+        return isNaN(value) ? value : parseInt(value);
+    })
+    @IsNumber()
+    @IsOptional()
+    page?: number = 30;
+
+    @Transform(({value}) => {
+        return isNaN(value) ? value : parseInt(value);
+    })
+    @IsNumber()
+    @IsOptional()
+    take?: number = 0;
 }

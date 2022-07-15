@@ -31,9 +31,4 @@ export class Review {
     })
     mode?: number;
 
-    @Column({
-        nullable: true
-    })
-    score?: number;    
-
 }

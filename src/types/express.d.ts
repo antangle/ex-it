@@ -1,14 +1,10 @@
+import { TokenData } from 'src/response/response.dto';
 import { User } from "src/entities/user.entity";
-
-export interface ITokens {
-    refresh_token?: string,
-    access_token: string
-}
 
 declare global {
 	namespace Express {
 		interface Request {
-            tokens: ITokens,
+            tokens: TokenData,
             endpoint: number
             user: {
                 id: number,

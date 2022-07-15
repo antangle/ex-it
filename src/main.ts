@@ -45,7 +45,11 @@ async function bootstrap() {
   
   //swagger
   const document = SwaggerModule.createDocument(app, swaggerConfig);
-  SwaggerModule.setup('apidocs', app, document);
+  SwaggerModule.setup('apidocs', app, document, {
+    swaggerOptions: {
+      defaultModelsExpandDepth: -1
+    }
+  });
 
   //asyncapi
   const asyncapiDocument = await AsyncApiModule.createDocument(app, asyncApiOptions);

@@ -1,16 +1,34 @@
+import { UnauthorizedResponse, BadRequestResponse, InternalServerErrorResponse } from 'src/response/response.dto';
 import { ApiResult } from './../types/user.d';
 import { RoomTag } from './../entities/roomTag.entity';
 import { JwtAuthGuard } from './../guard/jwtAuth.guard';
 import { apiHeaderOptions } from './../consts/objects';
-import { applyDecorators, SetMetadata, UseGuards } from '@nestjs/common';
+import { applyDecorators, SetMetadata, Type, UseGuards } from '@nestjs/common';
 import { SetEndpoint } from 'src/guard/endpoint.guard';
-import { ApiHeader, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiHeader, ApiBearerAuth, ApiUnauthorizedResponse, ApiBadRequestResponse, ApiInternalServerErrorResponse, ApiOkResponse } from '@nestjs/swagger';
 
 export function SetJwtAuth() {
   return applyDecorators(
     ApiHeader(apiHeaderOptions),
     ApiBearerAuth('access_token'),
     UseGuards(JwtAuthGuard)
+  );
+}
+
+export function ApiResponses(okResponse: Type<unknown> | Function | [Function] | string) {
+  return applyDecorators(
+    ApiOkResponse({
+      type: okResponse
+    }),
+    ApiUnauthorizedResponse({
+      type: UnauthorizedResponse
+    }),
+    ApiBadRequestResponse({
+      type: BadRequestResponse
+    }),
+    ApiInternalServerErrorResponse({
+      type: InternalServerErrorResponse
+    })
   );
 }
 
@@ -27,13 +45,21 @@ export function generateCode(endpoint: number, code: number): number{
 }
 
 
-export function makeApiResponse(code: number, data?: any, msg?: string){
-    const res: ApiResult = {
-        msg: msg,
-        code: code,
-        data: data
+export function makeApiResponse(code: number, data?: any, msg?: string): ApiResult{
+  let res: ApiResult = {
+    msg: msg,
+    code: code,
+  };
+  if(data){
+    if(data.hasOwnProperty('tokens')){
+      let { tokens, ...payload } = data;
+      res.data = payload;
+      res.tokens = tokens;
+      return res;
     }
-    return res;
+    else res.data = data;
+  }
+  return res;
 }
 
 export function parseReview(reviews: any[]){
@@ -42,7 +68,7 @@ export function parseReview(reviews: any[]){
       for(let i=1; i<reviewMapperArray.length; ++i){
           data.push({
               title: reviewMapperArray[i],
-              mode: i,
+              review_mode: i,
               count: 0
           })
       }

@@ -1,7 +1,8 @@
 export interface AuthorizedUser {
     id: number,
     email: string,
-    type: string
+    type: string,
+    authId?: number,
 }
 
 export interface Tokens {

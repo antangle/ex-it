@@ -1,3 +1,4 @@
+import { MyScheduleModule } from './schedule/schedule.module';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
@@ -11,6 +12,7 @@ import { UtilModule } from './module/util/util.module';
 import { ProfileModule } from './module/profile/profile.module';
 import { RoomModule } from './module/room/room.module';
 import { ChatModule } from './chat/chat.module';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({ 
   imports: [
@@ -27,7 +29,8 @@ import { ChatModule } from './chat/chat.module';
     RoomModule,
     UtilModule,
     ProfileModule,
-    ChatModule
+    ChatModule,
+    MyScheduleModule
   ],
   controllers: [AppController],
   providers: [

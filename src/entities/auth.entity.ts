@@ -7,17 +7,20 @@ export class Auth {
     @PrimaryGeneratedColumn()
     id?: number;
 
-    @ManyToOne(() => User, (user) => user.auth)
-    user?: User
+    @ManyToOne(() => User, (user) => user.auth, { onDelete: 'CASCADE' })
+    user?: User;
 
     @Column()
-    email?: string
+    userId?: number;
 
     @Column()
-    type?: string
+    email?: string;
+
+    @Column()
+    type?: string;
 
     @Column({
         nullable: true,
     })
-    oauth_refresh_token?: string
+    oauth_refresh_token?: string;
 }

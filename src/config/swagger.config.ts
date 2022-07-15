@@ -6,11 +6,11 @@ const swaggerConfig = new DocumentBuilder()
         scheme: 'bearer', 
         bearerFormat: 'JWT',
         name: 'access_token',
-        description: 'Enter JWT token',
+        description: 'Enter JWT access token',
         in: 'header'
     }, 'access_token')
     .setTitle('ex-it')
-    .setDescription('The ex-it API description')
+    .setDescription('This is ex-it API documentation')
     .setVersion('1.0')
     .build();
 
