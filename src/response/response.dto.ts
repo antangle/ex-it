@@ -68,3 +68,16 @@ export abstract class BaseOKResponseWithTokens {
     @ApiProperty()
     tokens?: TokenData;
 }
+
+export abstract class BaseAcceptedResponseWithTokens {
+    @ApiProperty({
+        default: HttpStatus.ACCEPTED
+    })
+    code: number;
+
+    @ApiProperty()
+    msg?: string;
+    
+    @ApiProperty()
+    tokens?: TokenData;
+}

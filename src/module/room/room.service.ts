@@ -1,3 +1,4 @@
+import { Status } from 'src/consts/enum';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { NotExistsException } from './../../exception/not-exist.exception';
 import { UpdateRoomJoinDto } from './dto/room-join-update.dto';
@@ -115,11 +116,11 @@ export class RoomService {
         return data;        
     }
     
-    makeRoomJoinDto(room: Room, user: User): RoomJoin{
+    makeRoomJoinDto(room: Room, user: User, status: string): RoomJoin{
         return {
             room: room,
             user: user,
-            status: 'host'
+            status: status
         }; 
     }
 
@@ -181,7 +182,7 @@ export class RoomService {
         }
     }
 
-    async joinRoom(roomJoinDto, queryRunner?: QueryRunner){
+    async joinRoom(roomJoinDto: UpdateRoomJoinDto, queryRunner?: QueryRunner){
         const roomJoinRepository = queryRunner ? queryRunner.manager.getRepository(RoomJoin) : this.roomJoinRepository;
         try{
             return await roomJoinRepository.insert(roomJoinDto);            

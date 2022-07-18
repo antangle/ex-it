@@ -58,9 +58,10 @@ export class RoomRepository extends Repository<Room> {
                 'room.hardcore AS hardcore', 
                 'room.created_at AS created_at', 
                 'room.title AS title',
-                'room.observer AS observer',
+                'room.observer AS observer',    
                 'room.nickname AS nickname',
-                'room.is_occupied AS is_occupied'
+                'room.is_occupied AS is_occupied',
+                'room.roomname AS roomname'
             ])
             .addSelect('tag_array.tags, tag_array.tagIds')
             .addSelect('observer.observers')

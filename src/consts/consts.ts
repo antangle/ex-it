@@ -48,6 +48,7 @@ export = {
     DUPLICATE_ACCOUNT_ERROR: 'this account is already signed in',
     SERVER_ERROR: 'server error',
     NOT_FOUND: '404 Not Found',
+    ALREADY_OCCUPIED: 'room already occupied',
     //Error codes
     SIGNIN_ERROR_CODE: 1,
     LOCAL_STRATEGY_ERROR_CODE: 2,

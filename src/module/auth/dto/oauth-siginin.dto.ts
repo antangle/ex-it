@@ -1,15 +1,16 @@
+import { OauthType } from './../../../consts/enum';
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsString } from "class-validator";
+import { IsBoolean, IsEmail, IsEnum, IsString } from "class-validator";
 import consts from "src/consts/consts";
 
 export class OAuthSignInDto {
 
     @ApiProperty()
-    @IsString()
+    @IsEmail()
     email?: string;
     
     @ApiProperty()
-    @IsString()
+    @IsEnum(OauthType)
     type?: string;
 
     @ApiProperty({name: consts.OAUTH_ACCESS_TOKEN})

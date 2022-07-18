@@ -6,8 +6,6 @@ import { AuthService } from '../auth/auth.service';
 import { UtilService } from '../util/util.service';
 import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, CACHE_MANAGER, UseFilters, Request } from '@nestjs/common';
 import { TestService } from './test.service';
-import { CreateTestDto } from './dto/create-test.dto';
-import { UpdateTestDto } from './dto/update-test.dto';
 import { Cache } from 'cache-manager';
 import { ApiTags } from '@nestjs/swagger';
 import { SetCode } from 'src/functions/util.functions';

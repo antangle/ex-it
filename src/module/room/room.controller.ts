@@ -1,4 +1,6 @@
-import { RoomIdDto } from './dto/number.dto';
+import { Status } from 'src/consts/enum';
+import { JoinRoomDto } from './dto/join.dto';
+import { RoomIdDto } from './dto/room.dto';
 import { BaseOKResponseWithTokens } from 'src/response/response.dto';
 import { UserInfoDto } from './dto/user-info.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -17,13 +19,16 @@ import { RoomService } from './room.service';
 import { SetCode, SetJwtAuth, makeApiResponse, ApiResponses } from 'src/functions/util.functions';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
 import { Room } from 'src/entities/room.entity';
-import { ApiBody, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiAcceptedResponse, ApiBody, ApiNoContentResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { TagResponse } from './response/tag.response';
 import { CreateRoomResponse } from './response/create.response';
 import { SearchRoomResponse } from './response/search.response';
 import { UserInfoResponse } from './response/user-info.response';
 import { GetEndRoomResponse } from './response/end.response';
+import consts from 'src/consts/consts';
+import { OccupiedResponse } from './response/occupied.response';
+import { OccupiedAcceptedResponse } from './response/occupied-accepted.response';
 
 @ApiTags('room')
 @Controller('room')
@@ -116,7 +121,7 @@ export class RoomController {
       await this.roomService.saveRoomTags(roomTags, queryRunner);
 
       // join host to that room
-      const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, userInfo);
+      const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, userInfo, Status.HOST);
       await this.roomService.joinRoom(roomJoinDto, queryRunner);
 
       await queryRunner.commitTransaction();
@@ -207,7 +212,9 @@ export class RoomController {
 
   @ApiOperation({
     summary: 'end room',
-    description: 'continue: true - 대화방유지 false - 메인으로 이동',
+    description: `continue: true - 대화방유지 false - 메인으로 이동
+      status: host, guest, observer에 따라 액션이 다름.
+    `,
   })
   @ApiResponses(BaseOKResponseWithTokens)
   @ApiBody({
@@ -225,31 +232,38 @@ export class RoomController {
     try{
       await queryRunner.connect();
       await queryRunner.startTransaction();
-
-      //update room_join tables
+      
       const userId = user.id;
       const roomId = roomEndDto.room_id;
+      // if host, update room table
+      if(roomEndDto.status == Status.HOST){
+        let updateRoomDto: UpdateRoomDto = {
+          is_occupied: null,
+          is_online: true
+        };
+        updateRoomDto.is_occupied = null;
+        if(!roomEndDto.continue) updateRoomDto.is_online = false;
+        await this.roomService.updateRoomOnline(roomId, updateRoomDto);
+      }
+
+      if(roomEndDto.status != Status.OBSERVER){
+        if(roomEndDto.review_mode < 5){
+          //get fellow id from roomJoin
+          let status = roomEndDto.status == Status.GUEST? Status.HOST : Status.GUEST;
+          const fellowId = await this.roomService.getUserIdFromStatus(roomId, status);
+          
+          const review = this.roomService.makeReview(roomEndDto, fellowId);
+          await this.roomService.createReview(review, queryRunner);
+        }
+      }
+
+      //update room_join tables
       const updateRoomJoinDto: UpdateRoomJoinDto = {
         total_time: roomEndDto.total_time,
         call_time: roomEndDto.call_time
       }
-      
-      const updateRoomDto: UpdateRoomDto = {
-        is_online: false
-      }
-      if(!roomEndDto.continue) await this.roomService.updateRoomOnline(roomId, updateRoomDto);
-
       await this.roomService.updateRoomJoin(userId, roomId, updateRoomJoinDto, queryRunner);
-
-      if(roomEndDto.review_mode < 5){
-        //get fellow id from roomJoin
-        let status = roomEndDto.status == 'guest' ? 'host' : 'guest';
-        const fellowId = await this.roomService.getUserIdFromStatus(roomId, status);
-        
-        const review = this.roomService.makeReview(roomEndDto, fellowId);
-        await this.roomService.createReview(review, queryRunner);
-      }
-
+      
       await queryRunner.commitTransaction();
       
       return makeApiResponse(HttpStatus.OK, {tokens});
@@ -282,7 +296,7 @@ export class RoomController {
     const mainUser = {
       id: user.id
     }
-    const result = await this.roomService.banUser(mainUser, banUser);
+    await this.roomService.banUser(mainUser, banUser);
     return makeApiResponse(HttpStatus.OK, {tokens});
   }
 
@@ -290,19 +304,74 @@ export class RoomController {
     summary: 'check if room is occupied',
     description: '해당 room의 guest자리가 비어있는지 체크. 차있으면 true, 비어있으면 false',
   })
+  @ApiResponses(OccupiedResponse)
+  //true if guest is talking, else false  
+  @SetJwtAuth()
+  @SetCode(209)
+  @Get('check_occupied')
+  async checkIfOccupied(
+    @Query() roomIdDto: RoomIdDto,
+    @AuthToken() tokens: Tokens,
+  ){
+    const roomId = roomIdDto.room_id;
+    const isOccupied = await this.roomService.checkOccupied(roomId) ? true : false;
+    return makeApiResponse(HttpStatus.OK, {isOccupied, tokens});
+  }                                           
+
+
+  @ApiOperation({
+    summary: 'join to that specific room',
+    description: `해당 roomId에 status: host, guest, observer 중 하나로 접속한다.\n
+      성공시 response code 200, 202이 존재한다.\n
+      200: 단순하게 jwt 토큰을 받는다.\n
+      202: guest가 join하려할 때, 이미 다른 guest가 join한 상태라면 201을 받고, data에 isOccupied: true 항목을 받는다
+    `,
+  })
+  @ApiAcceptedResponse({
+    type: OccupiedAcceptedResponse
+  })
   @ApiResponses(BaseOKResponseWithTokens)
   @ApiBody({
-    type: RoomIdDto
+    type: JoinRoomDto
   })
   //true if guest is talking, else false  
   @SetJwtAuth()
   @SetCode(208)
-  @Get('check')
-  async checkIfOccupied(
-    @Body('room_id') roomId: number,
+  @Post('join')
+  async joinRoom(
     @AuthToken() tokens: Tokens,
+    @AuthUser() user: AuthorizedUser,
+    @Body() joinRoomDto: JoinRoomDto
   ){
-    const isOccupied = await this.roomService.checkOccupied(roomId);
-    return makeApiResponse(HttpStatus.OK, {isOccupied, tokens});
+    const roomId = joinRoomDto.room_id;
+    const status = joinRoomDto.status;
+
+    const queryRunner = this.connection.createQueryRunner();
+
+    try{
+      await queryRunner.connect();
+      await queryRunner.startTransaction();
+      if(status == Status.GUEST){
+        const isOccupied = await this.roomService.checkOccupied(roomId);
+        //if someone already joined in room.
+        if(isOccupied && isOccupied >= new Date()) return makeApiResponse(HttpStatus.ACCEPTED, {tokens, isOccupied: isOccupied ? true : false} , consts.ALREADY_OCCUPIED)
+
+        const updateRoomDto: UpdateRoomDto = {
+          is_occupied: new Date()
+        };
+        await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
+      }
+
+      const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, {id: user.id}, status);
+      await this.roomService.joinRoom(roomJoinDto, queryRunner);
+
+      await queryRunner.commitTransaction();
+      return makeApiResponse(HttpStatus.OK, {tokens});      
+    } catch(err){
+      await queryRunner.rollbackTransaction();
+      throw err;
+    } finally {
+      await queryRunner.release();
+    }
   }
 }
