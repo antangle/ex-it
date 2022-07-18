@@ -22,10 +22,11 @@ export = {
     REFRESH_TOKEN_HEADER: 'Refresh-Token',
 
     //jwt
-    JWT_ACCESS_TOKEN_EXP: '15m',
+    JWT_ACCESS_TOKEN_EXP: '365d',
     JWT_REFRESH_TOKEN_EXP: '7d',
     ONE_DAY_IN_SECONDS: 24*60*60,
     JWT_EXPIRED: 'jwt expired',
+
     //Error handling messages
     TARGET_NOT_EXIST: 'target has no match in database',
     JWT_NOT_EXIST: 'no access_token exists',

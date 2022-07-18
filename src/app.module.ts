@@ -12,7 +12,6 @@ import { UtilModule } from './module/util/util.module';
 import { ProfileModule } from './module/profile/profile.module';
 import { RoomModule } from './module/room/room.module';
 import { ChatModule } from './chat/chat.module';
-import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({ 
   imports: [

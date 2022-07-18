@@ -25,6 +25,7 @@ export class CreateUserDto {
     @IsBoolean()
     personal_info_terms?: boolean;
 
+    @ApiHideProperty()
     @IsString()
     @IsOptional()
     refresh_token?: string;
