@@ -1,3 +1,4 @@
+import { RedisService } from './../redis/redis.service';
 import { CreateAuthDto } from './../auth/dto/create-auth.dto';
 import { User } from 'src/entities/user.entity';
 import { Connection } from 'typeorm';
@@ -15,10 +16,10 @@ import { LocalLoginDto } from '../auth/dto/local-login.dto';
 @ApiTags('test')
 export class TestController {
   constructor(
+    private readonly redisService: RedisService,
     private readonly testService: TestService,
+    private readonly utilService: UtilService,
     private readonly authService: AuthService,
-    @Inject(CACHE_MANAGER)
-    private readonly cacheManager: Cache,
     private readonly connection: Connection
   ) {}
 
@@ -26,6 +27,29 @@ export class TestController {
   @SetCode(900)
   async call(@Request() req, @Body('access_token') accessToken: string){
     return await this.authService.validateOAuthAccessToken(accessToken, 'kakao');
+  }
+
+  @Post('redis')
+  @SetCode(900)
+  async redisGet(@Body('key') key: string, @Body('val') val: number){
+    const res = await this.redisService.get(key);
+    console.log(res);
+    return res;
+  }
+  @Post('set')
+  @SetCode(900)
+  async redisSet(@Body('key') key: string, @Body('val') val: number){
+    await this.redisService.set(key, val)
+    return true;
+  }
+
+  @Post('message')
+  @SetCode(900)
+  async startSms(){
+    const temp = await this.utilService.sendSmsMessage('01075704801', 1234);
+    console.log('here2');
+    console.log(temp);
+    return temp;
   }
 
   @Post('validation')
@@ -59,7 +83,7 @@ export class TestController {
     }
   }
 
-  @Get('cache')
+/*   @Get('cache')
   async getCache(): Promise<string> {
     const savedTime = await this.cacheManager.get<number>('time');
     if(savedTime){
@@ -69,5 +93,5 @@ export class TestController {
     await this.cacheManager.set<number>('time', now);
     return `save new time : ${now}`;
   }
-
+ */
 }

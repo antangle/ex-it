@@ -12,7 +12,6 @@ import { TestController } from './test.controller';
 
 @Module({
   imports: [
-    
     TypeOrmModule.forFeature([AuthRepository, UserRepository]),
     AuthModule,
     RedisModule,

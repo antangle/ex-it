@@ -16,7 +16,10 @@ import { UtilService } from './util.service';
         }
       }
     }),
-    HttpModule
+    HttpModule.register({      
+      timeout: 5000,
+      maxRedirects: 5,
+    })
     
   ],
   providers: [UtilService],

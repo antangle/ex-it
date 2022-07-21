@@ -5,7 +5,7 @@ import { BadRequestCustomException } from './../../exception/bad-request.excepti
 import { QueryRunner, Repository, QueryFailedError } from 'typeorm';
 import { DatabaseException, UserExistsException } from './../../exception/database.exception';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
-import { OauthException } from '../../exception/axios.exception';
+import { OauthHttpException } from '../../exception/axios.exception';
 import { UtilService } from '../util/util.service';
 import { UpdateResult, TypeORMError, Transaction, Connection } from 'typeorm';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -152,7 +152,7 @@ export class AuthService {
             return axiosResponse;
         } catch(err){
             if(err instanceof UnauthorizedUserException) throw err;
-            else throw new OauthException(consts.INVALID_OAUTH_TOKEN, consts.OAUTH_VALIDATE_ERROR_CODE, err.response.data);
+            else throw new OauthHttpException(consts.INVALID_OAUTH_TOKEN, consts.OAUTH_VALIDATE_ERROR_CODE, err.response.data);
         }
     }
 }

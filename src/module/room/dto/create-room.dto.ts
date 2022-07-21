@@ -33,13 +33,15 @@ export class CreateRoomDto {
     @IsOptional()
     roomname: string;
     
-    @MaxLength(6, {each: true})
+    @MaxLength(5, {each: true})
     @IsString({each: true})
     @IsArray()
+    @IsOptional()
     custom_tags: string[];
 
     @IsInt({each: true})
     @IsArray()
+    @IsOptional()
     tags: number[];
 
 }

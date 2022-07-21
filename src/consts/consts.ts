@@ -4,6 +4,12 @@ export = {
     LIMIT_MOST_USED_TAGS: 3,
     PAGINATION_TAKE: 20,
     LOCAL: 'local',
+
+    //sens
+    SENS_DEFAULT: 'ex-it 본인인증 서비스입니다',
+    SMS: 'SMS',
+    FROM_PHONE_NUMBER: '01090204201',
+
     //for testing purposes
     LOCAL_URL: 'https://ex-it.app/health',
     KAKAO: 'kakao',
@@ -22,7 +28,7 @@ export = {
     REFRESH_TOKEN_HEADER: 'Refresh-Token',
 
     //jwt
-    JWT_ACCESS_TOKEN_EXP: '365d',
+    JWT_ACCESS_TOKEN_EXP: '1h',
     JWT_REFRESH_TOKEN_EXP: '7d',
     ONE_DAY_IN_SECONDS: 24*60*60,
     JWT_EXPIRED: 'jwt expired',
@@ -50,6 +56,7 @@ export = {
     SERVER_ERROR: 'server error',
     NOT_FOUND: '404 Not Found',
     ALREADY_OCCUPIED: 'room already occupied',
+    SENS_RESPONSE_ERROR: 'http response error',
     //Error codes
     SIGNIN_ERROR_CODE: 1,
     LOCAL_STRATEGY_ERROR_CODE: 2,
@@ -95,4 +102,5 @@ export = {
     CHECK_EMAIL_ERROR_CODE: 42,
     UPDATE_ROOM_ONLINE_ERROR_CODE: 43,
     GET_USERID_FROM_STATUS_ERROR_CODE: 44,
+    SEND_MESSAGE_ERROR_CODE: 45,
 }

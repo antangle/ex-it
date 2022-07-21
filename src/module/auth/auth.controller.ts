@@ -1,3 +1,5 @@
+import { RedisService } from './../redis/redis.service';
+import { VerifyDto, VerifyRequestDto } from './dto/verify.dto';
 import { AuthorizedUser } from './../../types/user.d';
 import { OAuthSignInDto } from './dto/oauth-siginin.dto';
 import { ChangePwDto } from './dto/change-pw.dto';
@@ -20,6 +22,7 @@ import { BadRequestResponse, BaseOKResponse, BaseOKResponseWithTokens, InternalS
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { CheckEmailResponse } from './response/auth.response';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
+import { VerifyResponse } from './response/verify.response';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -27,6 +30,7 @@ export class AuthController {
 
     constructor(
         private authService: AuthService,
+        private redisService: RedisService,
         private userService: UserService,
         private utilService: UtilService,
         private connection: Connection
@@ -291,11 +295,51 @@ export class AuthController {
     })
     @ApiResponses(BaseOKResponse)
     @SetJwtAuth()
-    @SetCode(107)
+    @SetCode(109)
     @Post('quit')
     async quit(@Request() req){
         const email = req.user.email;
-        const del = await this.userService.softDelete(email);
+        await this.userService.softDelete(email);
         return makeApiResponse(HttpStatus.OK);
+    }
+
+
+    @ApiOperation({
+        summary: '휴대폰 본인인증 인증번호 요청',
+        description: '전화번호 format: 01012345678 (작대기 없이 11자), 성공시 문자 메시지 전송',
+    })
+    @ApiResponses(BaseOKResponse)
+    @ApiBody({
+        type: VerifyRequestDto
+    })
+    @SetCode(110)
+    @Post('verify_request')
+    async sendVerificationNumber(@Body() verifyRequestDto: VerifyRequestDto){
+        // generate verification number
+        const randomNumber = this.utilService.make4RandomDigit();
+
+        // send sms message with verification number
+        await this.utilService.sendSmsMessage(verifyRequestDto.phone, randomNumber);
+        
+        // save number: randomNumber in cache
+        await this.redisService.set(verifyRequestDto.phone, randomNumber);
+
+        return makeApiResponse(HttpStatus.OK);
+    }
+
+    @ApiOperation({
+        summary: '휴대폰 본인인증',
+        description: '서버에서 해당 전화번호와 매칭되는 인증번호 판단, 인증시 true, else false',
+    })
+    @ApiResponses(VerifyResponse)
+    @ApiBody({
+        type: VerifyDto
+    })
+    @SetCode(110)
+    @Post('verify')
+    async verifyPhoneNumber(@Body() verifyDto: VerifyDto){
+        const verifyNumber = await this.redisService.get(verifyDto.phone);
+        const isVerified = verifyNumber == verifyDto.verify_number;
+        return makeApiResponse(HttpStatus.OK, {is_verified: isVerified});
     }
 }

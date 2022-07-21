@@ -1,3 +1,4 @@
+import { RedisModule } from './../redis/redis.module';
 import { LocalAuthGuard } from '../../guard/localAuth.guard';
 import { UtilModule } from '../util/util.module';
 import { AuthRepository } from './auth.repository';
@@ -21,6 +22,7 @@ import { UserRepository } from '../user/user.repository';
     UserModule,
     PassportModule,
     UtilModule,
+    RedisModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

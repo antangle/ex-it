@@ -7,7 +7,7 @@ import { JwtAuthException } from './../exception/jwt.exception';
 import { UnhandledException } from './../exception/unhandled.exception';
 import { DatabaseException, UserExistsException } from './../exception/database.exception';
 import { CustomError } from './../exception/custom.exception';
-import { OauthException } from './../exception/axios.exception';
+import { OauthHttpException } from './../exception/axios.exception';
 import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, BadRequestException, NotFoundException } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { BaseExceptionFilter, Reflector } from '@nestjs/core';
@@ -36,7 +36,7 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
       case UnauthorizedUserException:
         apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, consts.UNAUTHORIZED_USER)
         break;
-      case OauthException:
+      case OauthHttpException:
         apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, consts.UNAUTHORIZED_USER)
         break;
       case BadRequestCustomException:

@@ -1,3 +1,4 @@
+import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { Status } from 'src/consts/enum';
 import { JoinRoomDto } from './dto/join.dto';
 import { RoomIdDto } from './dto/room.dto';
@@ -10,7 +11,7 @@ import { SearchRoomDto } from './dto/search-room.dto';
 import { UserService } from './../user/user.service';
 import { User } from './../../entities/user.entity';
 import { RoomTag } from './../../entities/roomTag.entity';
-import { InsertResult, QueryRunner } from 'typeorm';
+import { QueryRunner } from 'typeorm';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Connection } from 'typeorm';
@@ -18,7 +19,6 @@ import { Body, Controller, Get, Param, Post, Query, HttpStatus, ParseIntPipe, Pa
 import { RoomService } from './room.service';
 import { SetCode, SetJwtAuth, makeApiResponse, ApiResponses } from 'src/functions/util.functions';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
-import { Room } from 'src/entities/room.entity';
 import { ApiAcceptedResponse, ApiBody, ApiNoContentResponse, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { TagResponse } from './response/tag.response';
@@ -37,9 +37,7 @@ export class RoomController {
     private readonly userService: UserService,
     private readonly roomService: RoomService,
     private connection: Connection
-  ) {}
-
-
+  ){}
   
   //gets main tag for makeroom
   @ApiOperation({
@@ -98,7 +96,9 @@ export class RoomController {
       
       const { tags, custom_tags, ...roomDto } = createRoomDto;
       const customTags = custom_tags;
-      
+      const tagsLength = tags.length + custom_tags.length;
+      if(tagsLength <= 0 || tagsLength > 3) throw new BadRequestCustomException('태그는 1개이상 3개 이하여야 합니다', null);
+
       // make roomtags instance with tags
       // save room
       const room = await this.roomService.createRoom(roomDto, queryRunner);
