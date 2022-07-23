@@ -57,6 +57,7 @@ export = {
     NOT_FOUND: '404 Not Found',
     ALREADY_OCCUPIED: 'room already occupied',
     SENS_RESPONSE_ERROR: 'http response error',
+    TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
     //Error codes
     SIGNIN_ERROR_CODE: 1,
     LOCAL_STRATEGY_ERROR_CODE: 2,
@@ -103,4 +104,5 @@ export = {
     UPDATE_ROOM_ONLINE_ERROR_CODE: 43,
     GET_USERID_FROM_STATUS_ERROR_CODE: 44,
     SEND_MESSAGE_ERROR_CODE: 45,
+    VERIFY_REQUEST_ERR_CODE: 46
 }

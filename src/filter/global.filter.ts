@@ -1,3 +1,4 @@
+import { TooManyRequestException } from './../exception/bad-request.exception';
 import { NoNicknameAvailableException } from './../exception/no-nickname.exception';
 import { NotExistsException } from '../exception/not-exist.exception';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
@@ -62,6 +63,9 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
         break;
       case NotFoundException:
         apiResponse = makeApiResponse(HttpStatus.NOT_FOUND, null, consts.NOT_FOUND)
+        break;
+      case TooManyRequestException:
+        apiResponse = makeApiResponse(HttpStatus.TOO_MANY_REQUESTS, null, consts.TOO_MANY_REQUESTS)
         break;
       default:
         apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)

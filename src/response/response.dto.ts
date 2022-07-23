@@ -40,6 +40,18 @@ export abstract class BadRequestResponse {
     msg?: string;
 }
 
+export abstract class TooManyRequestResponse {
+    @ApiProperty({
+        default: HttpStatus.TOO_MANY_REQUESTS
+    })
+    code: number;
+
+    @ApiProperty({
+        default: consts.TOO_MANY_REQUESTS
+    })
+    msg?: string;
+}
+
 export abstract class InternalServerErrorResponse {
     @ApiProperty({
         default: HttpStatus.INTERNAL_SERVER_ERROR

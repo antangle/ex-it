@@ -11,6 +11,11 @@ export interface Tokens {
     refresh_token: string
 }
 
+export interface VerifyCache {
+    time: number,
+    verifyNumber: number
+}
+
 export interface ApiResult {
     msg?: string,
     code: number,

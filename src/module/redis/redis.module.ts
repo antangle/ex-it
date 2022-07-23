@@ -13,7 +13,7 @@ import * as redisStore from 'cache-manager-ioredis';
                 store: redisStore,
                 host: configService.get<string>('REDIS_HOST'),
                 port: configService.get<number>('REDIS_PORT'),
-                ttl: 330
+                ttl: 180
             })
         })
     ],

@@ -1,6 +1,7 @@
+import { TooManyRequestException } from './../../exception/bad-request.exception';
 import { RedisService } from './../redis/redis.service';
 import { VerifyDto, VerifyRequestDto } from './dto/verify.dto';
-import { AuthorizedUser } from './../../types/user.d';
+import { AuthorizedUser, VerifyCache } from './../../types/user.d';
 import { OAuthSignInDto } from './dto/oauth-siginin.dto';
 import { ChangePwDto } from './dto/change-pw.dto';
 import { LocalLoginDto } from './dto/local-login.dto';
@@ -15,10 +16,10 @@ import { Body, Controller, Get, Post, Request, UseGuards, HttpStatus, Param, Que
 import { CreateUserDto } from 'src/module/user/dto/create-user.dto';
 import consts from 'src/consts/consts';
 import { ApiResponses, makeApiResponse, SetCode, SetJwtAuth } from 'src/functions/util.functions';
-import { ApiBadRequestResponse, ApiBody, ApiInternalServerErrorResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBadRequestResponse, ApiBody, ApiInternalServerErrorResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { BadRequestResponse, BaseOKResponse, BaseOKResponseWithTokens, InternalServerErrorResponse, UnauthorizedResponse, TokenData } from 'src/response/response.dto';
+import { BadRequestResponse, BaseOKResponse, BaseOKResponseWithTokens, InternalServerErrorResponse, UnauthorizedResponse, TokenData, TooManyRequestResponse } from 'src/response/response.dto';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { CheckEmailResponse } from './response/auth.response';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
@@ -310,6 +311,9 @@ export class AuthController {
         description: '성공시 해당 휴대번호로 문자 메시지 전송',
     })
     @ApiResponses(BaseOKResponse)
+    @ApiTooManyRequestsResponse({
+        type: TooManyRequestResponse
+    })
     @ApiBody({
         type: VerifyRequestDto
     })
@@ -319,11 +323,57 @@ export class AuthController {
         // generate verification number
         const randomNumber = this.utilService.make4RandomDigit();
 
+        //if sms already sent, send Too Many Request Exception
+        const isCacheExist = await this.redisService.get(verifyRequestDto.phone);
+        if(isCacheExist) throw new TooManyRequestException(consts.TOO_MANY_REQUESTS, consts.VERIFY_REQUEST_ERR_CODE)
+
         // send sms message with verification number
         await this.utilService.sendSmsMessage(verifyRequestDto.phone, randomNumber);
         
         // save number: randomNumber in cache
-        await this.redisService.set(verifyRequestDto.phone, randomNumber);
+        const verifyCache: VerifyCache = {
+            verifyNumber: randomNumber,
+            time: Date.now()
+        }
+
+        await this.redisService.set(verifyRequestDto.phone, verifyCache);
+
+        return makeApiResponse(HttpStatus.OK);
+    }
+    
+    @ApiOperation({
+        summary: '휴대폰 본인인증 인증번호 재인증 요청',
+        description: '성공시 해당 휴대번호로 문자 메시지 전송',
+    })
+    @ApiResponses(BaseOKResponse)
+    @ApiTooManyRequestsResponse({
+        type: TooManyRequestResponse
+    })
+    @ApiBody({
+        type: VerifyRequestDto
+    })
+    @SetCode(110)
+    @Post('verify_request_re')
+    async sendVerificationNumberAgain(@Body() verifyRequestDto: VerifyRequestDto){
+        // generate verification number
+        const randomNumber = this.utilService.make4RandomDigit();
+
+        const isCacheExist = await this.redisService.get(verifyRequestDto.phone);
+        if(isCacheExist){
+            const seconds = (Date.now() - isCacheExist.time)/1000
+            if(seconds < 15) throw new TooManyRequestException(consts.TOO_MANY_REQUESTS, consts.VERIFY_REQUEST_ERR_CODE)
+        } 
+
+        // send sms message with verification number
+        await this.utilService.sendSmsMessage(verifyRequestDto.phone, randomNumber);
+        
+        // save number: randomNumber in cache
+        const verifyCache: VerifyCache = {
+            verifyNumber: randomNumber,
+            time: Date.now()
+        }
+
+        await this.redisService.set(verifyRequestDto.phone, verifyCache);
 
         return makeApiResponse(HttpStatus.OK);
     }
@@ -339,8 +389,8 @@ export class AuthController {
     @SetCode(110)
     @Post('verify')
     async verifyPhoneNumber(@Body() verifyDto: VerifyDto){
-        const verifyNumber = await this.redisService.get(verifyDto.phone);
-        const isVerified = verifyNumber == verifyDto.verify_number;
+        const VerifyCache = await this.redisService.get(verifyDto.phone);
+        const isVerified = VerifyCache.verifyNumber == verifyDto.verify_number;
         return makeApiResponse(HttpStatus.OK, {is_verified: isVerified});
     }
 }

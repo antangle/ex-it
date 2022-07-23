@@ -87,7 +87,6 @@ export class UtilService {
 
         return this.httpService.axiosRef.post(host+url, data, options)
             .then(res => {
-                console.log('here1');
                 return res.data;
             })
             .catch(err => {
