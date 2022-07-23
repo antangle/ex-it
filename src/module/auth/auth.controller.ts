@@ -23,6 +23,7 @@ import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { CheckEmailResponse } from './response/auth.response';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
 import { VerifyResponse } from './response/verify.response';
+import { LoginResponse } from './response/login.response';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -44,12 +45,12 @@ export class AuthController {
     @ApiBody({
         type: LocalLoginDto
     })
-    @ApiResponses(BaseOKResponseWithTokens)
+    @ApiResponses(LoginResponse)
     @UseGuards(LocalAuthGuard)
     @SetCode(101)
     async login(@AuthUser() user: AuthorizedUser){
         const tokens = await this.authService.signIn(user);
-        return makeApiResponse(HttpStatus.OK, tokens);
+        return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
     }
 
 
@@ -98,7 +99,7 @@ export class AuthController {
         summary: 'oauth login',
         description: 'used for oauth login: naver, kakao, facebook. access_token 인증 기능은 현재 비활성화.',
     })
-    @ApiResponses(BaseOKResponseWithTokens)
+    @ApiResponses(LoginResponse)
     @ApiBody({type: OAuthLoginDto})
     @SetCode(103)
     @Post('oauth_login')
@@ -120,11 +121,11 @@ export class AuthController {
 
             let user = await this.userService.findUserById(userId, queryRunner);
             user.auth = auth;
-            console.log(user);
+
             const tokens = await this.authService.signIn(user, oauthLoginDto.type);
 
             await queryRunner.commitTransaction();
-            return makeApiResponse(HttpStatus.OK, {tokens});
+            return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
         } catch(err){
             await queryRunner.rollbackTransaction();
             throw err;
@@ -191,7 +192,7 @@ export class AuthController {
         summary: '회원가입',
         description: 'local user 회원가입',
     })
-    @ApiResponses(BaseOKResponseWithTokens)
+    @ApiResponses(LoginResponse)
     @ApiBody({
         type: CreateUserDto
     })
@@ -209,10 +210,11 @@ export class AuthController {
             createUserDto.password = await this.utilService.hashPassword(createUserDto.password);
 
             const user = await this.userService.createUser(createUserDto, queryRunner);
+            console.log(user);
             const tokens = await this.authService.signIn(user, consts.LOCAL, queryRunner);
 
             await queryRunner.commitTransaction();
-            return makeApiResponse(HttpStatus.OK, {tokens});
+            return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
         } catch(err){
             await queryRunner.rollbackTransaction();
             throw err;
@@ -226,7 +228,7 @@ export class AuthController {
         summary: '소셜 회원가입',
         description: 'oauth user 회원가입',
     })
-    @ApiResponses(BaseOKResponseWithTokens)
+    @ApiResponses(LoginResponse)
     @ApiBody({
         type: OAuthSignInDto
     })
@@ -236,7 +238,7 @@ export class AuthController {
     async oauthSignIn(@Body() oAuthSignInDto: OAuthSignInDto){
         const {
             type, 
-            oauth_access_token, 
+            oauth_access_token,
             email, 
             terms, 
             personal_info_terms, 
@@ -279,7 +281,7 @@ export class AuthController {
             user.auth = [auth];
             const tokens = await this.authService.signIn(user, type, queryRunner);
             await queryRunner.commitTransaction();
-            return makeApiResponse(HttpStatus.OK, {tokens});
+            return makeApiResponse(HttpStatus.OK, {tokens, username: user.nickname});
         } catch(err){
             await queryRunner.rollbackTransaction();
             throw(err);

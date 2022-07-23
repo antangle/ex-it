@@ -3,6 +3,7 @@ export interface AuthorizedUser {
     email: string,
     type: string,
     authId?: number,
+    nickname?: string
 }
 
 export interface Tokens {
