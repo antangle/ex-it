@@ -46,9 +46,11 @@ export class UtilService {
     }
 
     makeSensBody(guestNumber: string, randomNumber: number){
+        const content = `[ex-it!] 인증번호[${randomNumber}]를 입력해주세요.`
+
         const messages = [{
             to: guestNumber,
-            content: randomNumber
+            content: content
         }]
 
         const data = {

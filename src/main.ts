@@ -14,7 +14,6 @@ import { AsyncApiModule } from 'nestjs-asyncapi';
 
 async function bootstrap() {
   const devmode = process.env.DEVMODE;
-
   //for localhost ssl config, not used in production!!
   
   const server = express();

@@ -6,7 +6,7 @@ export = {
     LOCAL: 'local',
 
     //sens
-    SENS_DEFAULT: 'ex-it 본인인증 서비스입니다',
+    SENS_DEFAULT: '[ex-it!]',
     SMS: 'SMS',
     FROM_PHONE_NUMBER: '01090204201',
 
