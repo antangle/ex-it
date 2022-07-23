@@ -36,6 +36,7 @@ export class AuthController {
         private connection: Connection
     ){}
 
+    @Post('login')
     @ApiOperation({
         summary: 'login local user',
         description: 'use oauth_login for oauth users',
@@ -46,7 +47,6 @@ export class AuthController {
     @ApiResponses(BaseOKResponseWithTokens)
     @UseGuards(LocalAuthGuard)
     @SetCode(101)
-    @Post('login')
     async login(@AuthUser() user: AuthorizedUser){
         const tokens = await this.authService.signIn(user);
         return makeApiResponse(HttpStatus.OK, tokens);
@@ -240,7 +240,6 @@ export class AuthController {
             email, 
             terms, 
             personal_info_terms, 
-            is_authenticated, 
             oauth_refresh_token 
         } = oAuthSignInDto;
 
@@ -249,17 +248,17 @@ export class AuthController {
         try{
             await queryRunner.connect();
             await queryRunner.startTransaction();
-
+            
+            //check authentication with access token
+            //const isValid = await this.authService.validateOAuthAccessToken(oauth_access_token, type)
             const createUserDto: CreateUserDto = {
                 nickname: await this.authService.getRandomNickname(),
                 email: email,
                 terms: terms,
                 personal_info_terms: personal_info_terms,
-                is_authenticated: is_authenticated
+                is_authenticated: true //isValid
             };
 
-            //check authentication with access token
-            //const isValid = await this.authService.validateOAuthAccessToken(oauth_access_token, type)
 
             //if authenticated, check user exists.
             let user = await this.userService.findOneByEmailReturnNull(email, queryRunner);
@@ -291,7 +290,7 @@ export class AuthController {
 
     @ApiOperation({
         summary: '회원탈퇴',
-        description: 'soft delete 회원탈퇴',
+        description: 'soft delete 회원탈퇴. 5일후에 자동으로 서버에서 삭제됨',
     })
     @ApiResponses(BaseOKResponse)
     @SetJwtAuth()
@@ -306,7 +305,7 @@ export class AuthController {
 
     @ApiOperation({
         summary: '휴대폰 본인인증 인증번호 요청',
-        description: '전화번호 format: 01012345678 (작대기 없이 11자), 성공시 문자 메시지 전송',
+        description: '성공시 해당 휴대번호로 문자 메시지 전송',
     })
     @ApiResponses(BaseOKResponse)
     @ApiBody({

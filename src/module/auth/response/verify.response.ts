@@ -3,7 +3,8 @@ import { BaseOKResponseWithTokens, BaseOKResponse } from "src/response/response.
 
 abstract class VerifyResponseData {
     @ApiProperty({
-        default: true
+        default: true,
+        description: '인증 성공시 true, 인증 실패시 false'
     })
     is_verified: boolean;
 }

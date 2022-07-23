@@ -28,8 +28,8 @@ export = {
     REFRESH_TOKEN_HEADER: 'Refresh-Token',
 
     //jwt
-    JWT_ACCESS_TOKEN_EXP: '1h',
-    JWT_REFRESH_TOKEN_EXP: '7d',
+    JWT_ACCESS_TOKEN_EXP: '30m',
+    JWT_REFRESH_TOKEN_EXP: '14d',
     ONE_DAY_IN_SECONDS: 24*60*60,
     JWT_EXPIRED: 'jwt expired',
 

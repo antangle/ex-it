@@ -47,9 +47,9 @@ export function generateCode(endpoint: number, code: number): number{
 
 export function makeApiResponse(code: number, data?: any, msg?: string): ApiResult{
   let res: ApiResult = {
-    msg: msg,
     code: code,
   };
+  if(msg) res.msg = msg;
   if(data){
     if(data.hasOwnProperty('tokens')){
       let { tokens, ...payload } = data;
