@@ -19,10 +19,14 @@ abstract class UserInfoData {
 }
 
 export abstract class ReviewForm {
-    @ApiProperty()
+    @ApiProperty({
+        description: '리뷰 제목 명'
+    })
     title: string;
 
-    @ApiProperty()
+    @ApiProperty({
+        description: '리뷰id.'
+    })
     review_mode: string;
 
     @ApiProperty()

@@ -1,5 +1,3 @@
-import { OAuthSignInDto } from './../auth/dto/oauth-siginin.dto';
-import { BaseOKResponseWithTokens } from 'src/response/response.dto';
 import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Controller, Get, Request, HttpStatus, Query } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -7,7 +5,6 @@ import { AuthToken, AuthUser } from 'src/decorator/decorators';
 import { SetCode, SetJwtAuth, makeApiResponse, parseReview, ApiResponses } from 'src/functions/util.functions';
 import { Connection } from 'typeorm';
 import { ProfileService } from './profile.service';
-import { DateDto } from './dto/date.dto';
 import { SettingResponse } from './response/profile.response';
 import { MyInfoResponse } from './response/myinfo.response';
 import { MyAccountResponse } from './response/myaccount.response';

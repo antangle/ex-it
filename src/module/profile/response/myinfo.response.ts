@@ -4,7 +4,10 @@ import { ApiProperty } from "@nestjs/swagger";
 import { ReviewForm } from 'src/module/room/response/user-info.response';
 
 abstract class MyInfoResponseData {
-    @ApiProperty()
+    @ApiProperty({
+        default: '128fds',
+        description: '숫자와 영문으로 조합된 길이 6의 문자'
+    })
     nickname: string;
     
     @ApiProperty({

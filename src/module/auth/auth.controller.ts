@@ -358,10 +358,12 @@ export class AuthController {
         // generate verification number
         const randomNumber = this.utilService.make4RandomDigit();
 
+        
+        //10초 후까지 재인증 막아놓기
         const isCacheExist = await this.redisService.get(verifyRequestDto.phone);
         if(isCacheExist){
-            const seconds = (Date.now() - isCacheExist.time)/1000
-            if(seconds < 15) throw new TooManyRequestException(consts.TOO_MANY_REQUESTS, consts.VERIFY_REQUEST_ERR_CODE)
+            const seconds = (Date.now() - isCacheExist.time)/1000;
+            if(seconds < 10) throw new TooManyRequestException(consts.TOO_MANY_REQUESTS, consts.VERIFY_REQUEST_ERR_CODE);
         } 
 
         // send sms message with verification number
@@ -389,8 +391,11 @@ export class AuthController {
     @SetCode(110)
     @Post('verify')
     async verifyPhoneNumber(@Body() verifyDto: VerifyDto){
-        const VerifyCache = await this.redisService.get(verifyDto.phone);
-        const isVerified = VerifyCache.verifyNumber == verifyDto.verify_number;
+        const verifyCache = await this.redisService.get(verifyDto.phone);
+        console.log(verifyCache);
+        let isVerified: boolean;
+        if(verifyCache == null) isVerified = false;
+        else isVerified = verifyCache.verifyNumber == verifyDto.verify_number;
         return makeApiResponse(HttpStatus.OK, {is_verified: isVerified});
     }
 }
