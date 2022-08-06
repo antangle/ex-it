@@ -1,4 +1,5 @@
-import { Status } from 'src/consts/enum';
+import { SearchRoomDto } from './dto/search-room.dto';
+import { UtilService } from './../util/util.service';
 import { UpdateRoomDto } from './dto/update-room.dto';
 import { NotExistsException } from './../../exception/not-exist.exception';
 import { UpdateRoomJoinDto } from './dto/room-join-update.dto';
@@ -6,17 +7,15 @@ import { Ban } from './../../entities/ban.entity';
 import { RoomEndDto } from './dto/room-end.dto';
 import { reviewMapperArray } from './../../functions/util.functions';
 import { Review } from './../../entities/review.entity';
-import { parseReview } from 'src/functions/util.functions';
 import { RoomJoinRepository } from './room-join.repository';
 import { RoomJoin } from './../../entities/roomJoin.entity';
 import { RoomTag } from './../../entities/roomTag.entity';
 import { RoomRepository } from './room.repository';
-import { CreateRoomDto } from './dto/create-room.dto';
 import { UserRepository } from './../user/user.repository';
 import { User } from './../../entities/user.entity';
 import { UnhandledException } from './../../exception/unhandled.exception';
 import { DatabaseException } from './../../exception/database.exception';
-import { Repository, InsertResult, TypeORMError, In } from 'typeorm';
+import { Repository, InsertResult, TypeORMError } from 'typeorm';
 import { Tag } from './../../entities/tag.entity';
 import { QueryRunner } from 'typeorm';
 import { Injectable } from '@nestjs/common';
@@ -27,6 +26,7 @@ import { Room } from 'src/entities/room.entity';
 @Injectable()
 export class RoomService {
     constructor(
+        private utilService: UtilService,
         private userRepository: UserRepository,
         private roomRepository: RoomRepository,
         private roomJoinRepository: RoomJoinRepository,
@@ -166,15 +166,12 @@ export class RoomService {
 
     async getSearchedRooms(
         userId: number, 
-        tagId: number, 
-        searchTitle: string, 
-        page: number, 
-        take: number, 
+        searchRoomDto: SearchRoomDto, 
         queryRunner?: QueryRunner
     ){
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
-            const rooms = await roomRepository.searchRoomsPaged(userId, tagId, searchTitle, page, take);
+            const rooms = await roomRepository.searchRoomsPaged(userId, searchRoomDto);
             return rooms;
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.GET_ALL_ROOMS_ERROR_CODE, err);
@@ -185,7 +182,14 @@ export class RoomService {
     async joinRoom(roomJoinDto: UpdateRoomJoinDto, queryRunner?: QueryRunner){
         const roomJoinRepository = queryRunner ? queryRunner.manager.getRepository(RoomJoin) : this.roomJoinRepository;
         try{
-            return await roomJoinRepository.insert(roomJoinDto);            
+            return await roomJoinRepository.createQueryBuilder()
+                .insert()
+                .values(roomJoinDto)
+                .orUpdate({
+                    conflict_target: ['status', 'userId', 'roomId'],
+                    overwrite: ['created_at']
+                })
+                .execute();
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.JOIN_ROOM_ERROR_CODE, err);
             else throw new UnhandledException(this.getMainTags.name, consts.JOIN_ROOM_ERROR_CODE, err);
@@ -208,10 +212,10 @@ export class RoomService {
         }
     }
 
-    async updateRoomJoin(userId: number, roomId: number, updateRoomJoinDto: UpdateRoomJoinDto, queryRunner?: QueryRunner){
+    async updateRoomJoin(userId: number, roomId: number, status: string, updateRoomJoinDto: UpdateRoomJoinDto, queryRunner?: QueryRunner){
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
-            await roomJoinRepository.updateTime(userId, roomId, updateRoomJoinDto);
+            await roomJoinRepository.updateTime(userId, roomId, status, updateRoomJoinDto);
 
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_JOIN_ERROR_CODE, err);
@@ -277,7 +281,7 @@ export class RoomService {
             const userInfo = await userRepository.getProfileQuery(userId);
             const tags = await roomJoinRepository.getMostUsedTags(userId);
             const reviews = await userRepository.getReviewCount(userId);
-            const parsedReviews = parseReview(reviews);
+            const parsedReviews = await this.utilService.parseReview(reviews);
             return {
                 userInfo: userInfo[0],
                 usedTags: this.parseTags(tags),
@@ -294,13 +298,13 @@ export class RoomService {
         try{
             const room = await roomRepository.findOne(roomId);
             if(!room) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.FIND_ROOM_ERROR_CODE);
-            
+            const talk_time = Math.floor((Date.now() - room.is_occupied.getTime()) / 1000);
             let countObservers = await roomRepository.observerCount(roomId);
             let observers;
             if(!countObservers) observers = 0;
             else observers = countObservers.count
 
-            return {room, observer_count: observers};
+            return {talk_time: talk_time, observer_count: observers};
         } catch(err){
             if(err instanceof DatabaseException) throw err;
             else throw new UnhandledException(this.findRoom.name, consts.FIND_ROOM_ERROR_CODE, err);
@@ -318,10 +322,6 @@ export class RoomService {
         }
     }
 
-    findReview(){
-        return reviewMapperArray.slice(1);
-    }
-
     parseTags(tags: any[]){
         const parsed = [];
         tags.map(x => {
@@ -330,10 +330,13 @@ export class RoomService {
         return parsed;
     }
 
+    findReview(){
+        return this.utilService.findReviews();
+    }
+
     makeReview(roomEndDto: RoomEndDto, fellow_id: number): Review {
         return {
-            mode: roomEndDto.review_mode+ 1,
-            title: reviewMapperArray[roomEndDto.review_mode + 1],
+            reviewMapper: {id: roomEndDto.review_id},
             user: {id: fellow_id},
             room: {id: roomEndDto.room_id}
         }

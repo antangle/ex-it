@@ -1,3 +1,4 @@
+import { ReviewMapper } from './../../entities/reviewMapper.entity';
 import { SensHttpException } from './../../exception/axios.exception';
 import { AuthorizedUser } from './../../types/user.d';
 import { TokenData } from 'src/response/response.dto';
@@ -11,13 +12,16 @@ import consts from 'src/consts/consts';
 import * as bcrypt from 'bcrypt';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
 import * as CryptoJS from 'crypto-js';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @Injectable()
 export class UtilService {
     constructor(
         private jwtService: JwtService,
         private configService: ConfigService,
-        private httpService: HttpService
+        private httpService: HttpService,
+        @InjectRepository(ReviewMapper) private reviewMapperRepository: Repository<ReviewMapper>
     ){}
     
     makeSignature(url: string, date: number, method: string = 'POST') {
@@ -166,5 +170,31 @@ export class UtilService {
 
     async comparePassword(password: string, hashedPassword: string): Promise<boolean>{
         return bcrypt.compare(password, hashedPassword);
+    }
+
+    async findReviews(){
+        return await this.reviewMapperRepository.find();
+    }
+
+    async parseReview(reviews: any[]){
+        const reviewMapper = await this.findReviews();
+        try{
+            let data = {};
+            for(let i=0; i<reviewMapper.length; ++i){
+                data[reviewMapper[i].id] = {
+                    title: reviewMapper[i].title,
+                    review_id: reviewMapper[i].id,
+                    count: 0
+                }
+            }
+            if(reviews[0].reviewMapperId != null){
+                reviews.map(review => {
+                    data[review.reviewMapperId].count = review.count;
+                })
+            }
+            return Object.values(data);
+        } catch(err){
+            throw err;
+        }
     }
 }

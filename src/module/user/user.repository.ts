@@ -56,9 +56,9 @@ export class UserRepository extends Repository<User> {
     async getReviewCount(param: string | number): Promise<any[]>{
         let query = this.createQueryBuilder('user')
             .select('user.nickname AS nickname')
-            .addSelect('review.mode, COUNT(review.mode) AS count')
+            .addSelect('review.reviewMapperId, COUNT(review.reviewMapperId) AS count')
             .leftJoin('user.review', 'review')
-            .groupBy('user.nickname, review.mode')
+            .groupBy('user.nickname, review.reviewMapperId')
 
         if(typeof param === 'string') query = query.where('user.email = :email', {email: param})
         else if(typeof param === 'number') query = query.where('user.id = :userId', {userId: param})

@@ -4,6 +4,11 @@ export enum Status {
     OBSERVER = 'observer'
 }
 
+export enum StatusWithoutHost {
+    GUEST = 'guest',
+    OBSERVER = 'observer'
+}
+
 export enum OauthType {
     KAKAO = 'kakao',
     NAVER = 'naver',

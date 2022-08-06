@@ -1,16 +1,20 @@
+import { ReviewMapper } from './../../entities/reviewMapper.entity';
 import { NotExistsException } from 'src/exception/not-exist.exception';
 import { UnhandledException } from './../../exception/unhandled.exception';
 import consts from 'src/consts/consts';
 import { DatabaseException } from './../../exception/database.exception';
 import { User } from 'src/entities/user.entity';
 import { UserRepository } from './../user/user.repository';
-import { QueryRunner } from 'typeorm';
+import { QueryRunner, Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
 
 @Injectable()
 export class ProfileService {
     constructor(
         private userRepository: UserRepository,
+        @InjectRepository(ReviewMapper)
+        private reviewMapperRepository: Repository<ReviewMapper>,
     ){}
 
     async getProfileInfo(userId: number, queryRunner?: QueryRunner): Promise<any>{
@@ -34,6 +38,18 @@ export class ProfileService {
         } catch(err){
             if(err instanceof DatabaseException) throw err;
             else throw new UnhandledException(this.getMyInfo.name, consts.GET_MY_INFO_ERROR_CODE, err);
+        }
+    }
+
+    async getReviewMapper(queryRunner?: QueryRunner):Promise<any>{
+        const reviewMapperRepository = queryRunner ? queryRunner.manager.getRepository(ReviewMapper) : this.reviewMapperRepository;
+        try{
+            const count = await reviewMapperRepository.find();
+            if(!count) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_REVIEW_MAPPER_ERR_CODE);
+            return count;
+        } catch(err){
+            if(err instanceof DatabaseException) throw err;
+            else throw new UnhandledException(this.getMyInfo.name, consts.GET_REVIEW_MAPPER_ERR_CODE, err);
         }
     }
     

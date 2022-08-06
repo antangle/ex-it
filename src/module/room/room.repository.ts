@@ -1,3 +1,4 @@
+import { SearchRoomDto } from './dto/search-room.dto';
 import { Ban } from './../../entities/ban.entity';
 import { User } from 'src/entities/user.entity';
 import { RoomJoin } from './../../entities/roomJoin.entity';
@@ -45,11 +46,10 @@ export class RoomRepository extends Repository<Room> {
 
     async searchRoomsPaged(
         userId: number, 
-        tagId: number, 
-        searchTitle: string, 
-        page: number, 
-        take: number
+        searchRoomDto: SearchRoomDto
     ){
+        
+        const {tag_id, title, take, page} = searchRoomDto;
         const status = 'observer';
         let query = await this.createQueryBuilder('room')
             .distinct(true) 
@@ -66,7 +66,7 @@ export class RoomRepository extends Repository<Room> {
             .addSelect('tag_array.tags, tag_array.tagIds')
             .addSelect('observer.observers')
             .where('room.is_online = true')
-            .andWhere('room.title LIKE :title', {title: `%${searchTitle}%`})
+            .andWhere('room.title LIKE :title', {title: `%${title}%`})
             //ban list
             .andWhere((qb) => {
                 const subQuery = qb.subQuery()
@@ -94,15 +94,17 @@ export class RoomRepository extends Repository<Room> {
             .setParameter('status', status)
                 
 
-        if(tagId != 0){
+        if(tag_id != 0){
             query = query
                 .andWhere('room_tag.tagId = :tagId')
-                .setParameter('tagId', tagId);
+                .setParameter('tagId', tag_id);
         }
-        return query
-            .take(take)
-            .skip(take*page)
-            .getRawMany();
+        
+        query = query
+            .offset(take*page)
+            .limit(take)
+        
+        return query.getRawMany();
 
     }
 

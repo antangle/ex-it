@@ -1,11 +1,16 @@
+import { ReviewMapper } from './../../entities/reviewMapper.entity';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { Module } from '@nestjs/common';
 import { HttpModule } from '@nestjs/axios';
 import { UtilService } from './util.service';
+import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  imports: [    
+  imports: [
+    TypeOrmModule.forFeature([
+      ReviewMapper
+    ]),
     ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],

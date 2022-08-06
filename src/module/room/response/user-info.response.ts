@@ -20,16 +20,18 @@ abstract class UserInfoData {
 
 export abstract class ReviewForm {
     @ApiProperty({
-        description: '리뷰 제목 명'
+        description: '리뷰 제목'
     })
     title: string;
 
     @ApiProperty({
-        description: '리뷰id.'
+        description: '리뷰id. 서버에서 제목 대신 이 숫자로 리뷰 종류를 판별함.'
     })
-    review_mode: string;
+    review_id: string;
 
-    @ApiProperty()
+    @ApiProperty({
+        description: '해당 리뷰를 받는 총 count'
+    })
     count: number;
 }
 

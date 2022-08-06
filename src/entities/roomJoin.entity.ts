@@ -1,8 +1,9 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, Index, Unique } from 'typeorm';
 import { Room } from './room.entity';
 import { User } from './user.entity';
 
 @Entity({name: 'room_join'})
+@Index(["status", "userId", "roomId"], { unique: true })
 export class RoomJoin {
     @PrimaryGeneratedColumn()
     id?: number;

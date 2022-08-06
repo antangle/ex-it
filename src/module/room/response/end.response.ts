@@ -1,25 +1,27 @@
 import { Room } from 'src/entities/room.entity';
 import { BaseOKResponseWithTokens } from 'src/response/response.dto';
 import { ApiProperty } from "@nestjs/swagger";
+import { ReviewMapper } from 'src/entities/reviewMapper.entity';
 
 abstract class GetEndResponseData {
-    @ApiProperty()
-    room: Room;
 
-    @ApiProperty()
+    @ApiProperty({
+        default: 120,
+        description: '대화한 총 시간. 초(s)단위. guest가 host의 방에 접속한 그 순간부터 시간을 센다. 프론트에서 시간을 관리해야하나?'
+    })
+    talk_time: number;
+
+    @ApiProperty({
+        default: 23,
+        description: '지금까지 이 방에 옵저버로 들어온 사람들의 총 수'
+    })
     observer_count: number;
 
     @ApiProperty({
         isArray: true,
-        default: [
-            "시원하게 쏴대는",
-            "재밌게 말하는",
-            "공감을 잘 하는",
-            "인사이트가 넘치는",
-            "잘 경청하는"
-        ]
+        description: '등록할 리뷰들에 대한 정보'
     })
-    reviews: string;
+    reviews: ReviewMapper;
 }
 
 export abstract class GetEndRoomResponse extends BaseOKResponseWithTokens{

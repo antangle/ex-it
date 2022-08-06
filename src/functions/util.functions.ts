@@ -1,3 +1,4 @@
+import { ReviewMapper } from './../entities/reviewMapper.entity';
 import { UnauthorizedResponse, BadRequestResponse, InternalServerErrorResponse } from 'src/response/response.dto';
 import { ApiResult } from './../types/user.d';
 import { RoomTag } from './../entities/roomTag.entity';
@@ -60,28 +61,6 @@ export function makeApiResponse(code: number, data?: any, msg?: string): ApiResu
     else res.data = data;
   }
   return res;
-}
-
-export function parseReview(reviews: any[]){
-  try{
-      let data = [];
-      for(let i=1; i<reviewMapperArray.length; ++i){
-          data.push({
-              title: reviewMapperArray[i],
-              review_mode: i,
-              count: 0
-          })
-      }
-      if(reviews[0].mode != null){
-          reviews.map(review => {
-              var idx: number = +review.mode - 1
-              data[idx].count = review.count;                    
-          })
-      }
-      return data;
-  } catch(err){
-      throw err;
-  }
 }
 
 export const reviewMapperArray = [

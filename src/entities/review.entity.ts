@@ -1,3 +1,4 @@
+import { ReviewMapper } from './reviewMapper.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, OneToOne, JoinColumn } from 'typeorm';
 import { Room } from './room.entity';
 import { User } from './user.entity';
@@ -6,6 +7,10 @@ import { User } from './user.entity';
 export class Review {
     @PrimaryGeneratedColumn()
     id?: number;
+
+    @JoinColumn()
+    @ManyToOne(() => ReviewMapper)
+    reviewMapper?: ReviewMapper;
 
     @ManyToOne(() => Room, room => room.review)
     room?: Room;
@@ -23,12 +28,8 @@ export class Review {
     })
     roomId?: number;
 
-    @Column()
-    title?: string;
-
     @Column({
         nullable: true
     })
-    mode?: number;
-
+    reviewMapperId?: number;
 }

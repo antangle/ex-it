@@ -2,7 +2,9 @@ import { BaseAcceptedResponseWithTokens, BaseOKResponseWithTokens } from 'src/re
 import { ApiProperty } from "@nestjs/swagger";
 
 abstract class OccupiedResponseData {
-    @ApiProperty()
+    @ApiProperty({
+        description: '해당 방에 guest가 있다면 true, else false'
+    })
     isOccupied: boolean;
 }
 

@@ -1,3 +1,4 @@
+import { JoinedDto } from './dto/joined.dto';
 import { JoinDto } from './dto/join.dto';
 import { MessageDto } from './dto/message.dto';
 import { testDto } from './dto/test.dto';
@@ -6,7 +7,6 @@ import { OnGatewayConnection } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { WebSocketGateway, SubscribeMessage, MessageBody, WebSocketServer, ConnectedSocket } from '@nestjs/websockets';
 import { ChatService } from './chat.service';
-import { UpdateChatDto } from './dto/update-chat.dto';
 import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
 
 
@@ -33,26 +33,37 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
   async handleEvent(
       @ConnectedSocket() socket: Socket, 
       @MessageBody() data: {
-        roomId: string, 
+        roomname: string, 
         peerId: string, 
         nickname: string
       },
   ) {
-      const {roomId, peerId, nickname} = data;
-      console.log(`joined room!\nroomId: ${roomId}\npeerId: ${peerId}`);
+      const {roomname, peerId, nickname} = data;
+      console.log(`joined room!\nroomId: ${roomname}\npeerId: ${peerId}`);
       
-      await socket.join(roomId);
-      socket.to(roomId).emit('user-connected', {peerId, nickname});
+      await socket.join(roomname);
+      socket.to(roomname).emit('user-connected', {peerId, nickname});
   } 
   
   @AsyncApiSub({
     channel: 'join',
-    summary: 'join room with key: roomname',
+    summary: 'roomname에 해당하는 방에 접속한다.',
     description: 'method is used for test purposes',
     message: {
       name: 'data',
       payload: {
         type: JoinDto
+      },
+    },
+  })
+  @AsyncApiPub({
+    channel: 'joined',
+    summary: '<join> 성공 이후 <joined>라는 이벤트를 발생시키고 성공 메세지를 전달한다.',
+    description: 'method is used for test purposes',
+    message: {
+      name: 'data',
+      payload: {
+        type: JoinedDto
       },
     },
   })
@@ -61,25 +72,17 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
       @ConnectedSocket() socket: Socket,
       @MessageBody() data: {roomname: string}
   ) {
-    console.log(data);
+    const payload = {
+      msg: `user joined in room ${data.roomname}`
+    };
+
     await socket.join(data.roomname);
-    socket.emit('joined', `user join in room ${data.roomname}`);
+    socket.emit('joined', payload);
   }
 
-  @AsyncApiPub({
-    channel: 'createMessage',
-    summary: 'after <message>, send message to all room subscribers',
-    description: 'method is used for test purposes',
-    message: {
-      name: 'data',
-      payload: {
-        type: MessageDto
-      },
-    },
-  })
   @AsyncApiSub({
     channel: 'message',
-    summary: 'recieve message, then send via <createMessage>',
+    summary: '<message>이벤트를 받아 해당 roomname의 방에 접속한 모든 소켓에게 <createMessage>이벤트를 발생시킨다.',
     description: 'method is used for test purposes',
     message: {
       name: 'data',
@@ -88,18 +91,32 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
       },
     },
   })
+  @AsyncApiPub({
+    channel: 'createMessage',
+    summary: '채팅 내역과 보낸이의 nickname을 담아 해당 roomname의 방에 접속한 모두에게 <createMessage>이벤트를 전송한다.',
+    description: 'method is used for test purposes',
+    message: {
+      name: 'data',
+      payload: {
+        type: MessageDto
+      },
+    },
+  })
   @SubscribeMessage('message')
   handleMessage(
       @ConnectedSocket() socket: Socket,
       @MessageBody() data: testDto
   ): void {
-      console.log(data);
-      socket.to(data.roomname).emit('createMessage', data.msg, data.nickname);
+      const payload = {
+        msg: data.msg,
+        nickname: data.nickname
+      }
+      socket.to(data.roomname).emit('createMessage', payload);
   }
 
   @AsyncApiSub({
     channel: 'leave',
-    summary: 'leave room',
+    summary: '해당 방에서 퇴장한다.',
     description: 'method is used for test purposes',
     message: {
       name: 'data',
@@ -108,13 +125,11 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
       },
     },
   })
-
   @SubscribeMessage('leave')
   async tempLeave(
       @ConnectedSocket() socket: Socket,
       @MessageBody() data: {roomname: string}
   ) {
-    console.log(data);
     await socket.leave(data.roomname);
   }
 

@@ -1,3 +1,4 @@
+import { ReviewMapper } from './../../entities/reviewMapper.entity';
 import { UserRepository } from './../user/user.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UserModule } from '../user/user.module';
@@ -9,7 +10,7 @@ import { UtilModule } from 'src/module/util/util.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([UserRepository]),
+    TypeOrmModule.forFeature([UserRepository, ReviewMapper]),
     AuthModule,
     UtilModule,
     UserModule,

@@ -55,9 +55,6 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
       case DatabaseException:
         apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.DATABASE_ERROR)
         break;
-      case UnhandledException:
-        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
-        break;
       case UserExistsException:
         apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, data, consts.DUPLICATE_ACCOUNT_ERROR)
         break;
@@ -66,6 +63,9 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
         break;
       case TooManyRequestException:
         apiResponse = makeApiResponse(HttpStatus.TOO_MANY_REQUESTS, null, consts.TOO_MANY_REQUESTS)
+        break;
+      case UnhandledException:
+        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
         break;
       default:
         apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)

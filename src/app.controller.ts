@@ -1,10 +1,7 @@
 import { makeApiResponse, SetCode } from 'src/functions/util.functions';
-import { Controller, Get, Inject, Param, Query, Redirect, Render, HttpStatus, Request } from '@nestjs/common';
+import { Controller, Get, HttpStatus, Response } from '@nestjs/common';
 import { AppService } from './app.service';
-import { v4 as uuidv4 } from 'uuid';
 import { HttpAdapterHost } from '@nestjs/core';
-import { ApiOkResponse, ApiParam, ApiResponse } from '@nestjs/swagger';
-import { number, string } from 'joi';
 
 @Controller('')
 export class AppController {
@@ -19,7 +16,7 @@ export class AppController {
   }
 
   @Get('favicon.ico')
-  favicon(@Request() res): void {
+  favicon(@Response() res): void {
     res.status(204);
     res.end();
   }

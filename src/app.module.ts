@@ -1,5 +1,5 @@
 import { MyScheduleModule } from './schedule/schedule.module';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { CacheModule, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -12,12 +12,26 @@ import { UtilModule } from './module/util/util.module';
 import { ProfileModule } from './module/profile/profile.module';
 import { RoomModule } from './module/room/room.module';
 import { ChatModule } from './chat/chat.module';
+import { LoggerModule } from 'nestjs-pino';
 
-@Module({ 
+@Module({
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: process.env.DEVMODE == 'dev' ? '.env.dev' : '.env'
+    }),
+    LoggerModule.forRootAsync({
+      imports: [ ConfigModule ],
+      useFactory: async (configService: ConfigService) => {
+        return configService.get('DEVMODE') ? {
+            pinoHttp: {
+              transport: {
+                target:  'pino-pretty'
+              }
+            }
+        } : {};
+      },
+      inject: [ ConfigService ]
     }),
     CacheModule.register(),
     MyTypeormModule,

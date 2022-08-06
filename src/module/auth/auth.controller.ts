@@ -179,13 +179,13 @@ export class AuthController {
         required: true,
         description: '확인할 이메일'
     })
-    @Get('email_check')
-    async checkEmail(@Query('email') email: string){
+    @Post('email_check')
+    async checkEmail(@Body('email') email: string){
         const available = await this.userService.checkEmailExists(email);
         const payload = {
             available: available
         }
-        return makeApiResponse(HttpStatus.OK, {payload});
+        return makeApiResponse(HttpStatus.OK, payload);
     }
 
 

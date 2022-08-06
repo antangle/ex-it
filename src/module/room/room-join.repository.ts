@@ -21,8 +21,7 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
             .getRawMany();
     }
 
-    async updateTime(userId: number, roomId: number, updateRoomJoinDto: UpdateRoomJoinDto){
-        const status = ['host', 'guest'];
+    async updateTime(userId: number, roomId: number, status: string, updateRoomJoinDto: UpdateRoomJoinDto){
         return await this.createQueryBuilder('room_join')
             .update()
             .set({
@@ -31,7 +30,7 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
             })
             .where('userId = :userId', {userId: userId})
             .andWhere('roomId = :roomId', {roomId: roomId})
-            .andWhere('status IN (:...status)', {status: status})
+            .andWhere('status = :status', {status: status})
             .setParameters(updateRoomJoinDto)
             .execute();
     }

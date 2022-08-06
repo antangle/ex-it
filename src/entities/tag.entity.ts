@@ -4,6 +4,9 @@ import { ApiHideProperty, ApiProperty } from '@nestjs/swagger';
 
 @Entity({name: 'tag'})
 export class Tag {
+    @ApiProperty({
+        description: '태그 id'
+    })
     @PrimaryGeneratedColumn()
     id?: number;
     
@@ -11,6 +14,9 @@ export class Tag {
     @OneToMany(() => RoomTag, roomTag => roomTag.tag)
     room_tag?: RoomTag;
     
+    @ApiProperty({
+        description: '태그 명'
+    })
     @Index()
     @Column({
         unique: true

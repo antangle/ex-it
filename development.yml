@@ -33,5 +33,15 @@ services:
     volumes:
       - ./:/app
       - /app/node_modules
+
+  pgadmin:
+    container_name: pgadmin4_container
+    image: dpage/pgadmin4
+    restart: always
+    environment:
+      PGADMIN_DEFAULT_EMAIL: test@admin.com
+      PGADMIN_DEFAULT_PASSWORD: testtest
+    ports:
+      - "5050:80"
 volumes:
   pgdata:

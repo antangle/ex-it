@@ -11,6 +11,7 @@ import { SwaggerModule } from '@nestjs/swagger';
 import swaggerConfig from './config/swagger.config';
 import { getServer } from './config/https.config';
 import { AsyncApiModule } from 'nestjs-asyncapi';
+import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
   const devmode = process.env.DEVMODE;
@@ -54,6 +55,9 @@ async function bootstrap() {
   const asyncapiDocument = await AsyncApiModule.createDocument(app, asyncApiOptions);
   await AsyncApiModule.setup('/async-api', app, asyncapiDocument);
   app.useGlobalFilters(new GlobalExceptionFilter());
+
+  //logger
+  app.useLogger(app.get(Logger));
 
   //for localhost ssl config!!
   const webSocketServer = getServer(devmode, server);

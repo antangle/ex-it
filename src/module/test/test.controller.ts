@@ -1,34 +1,33 @@
+import { LoggingInterceptor } from './../../interceptor/logging.interceptor';
 import { RedisService } from './../redis/redis.service';
 import { CreateAuthDto } from './../auth/dto/create-auth.dto';
 import { User } from 'src/entities/user.entity';
 import { Connection } from 'typeorm';
-import { UserRepository } from 'src/module/user/user.repository';
 import { AuthService } from '../auth/auth.service';
 import { UtilService } from '../util/util.service';
-import { Controller, Get, Post, Body, Patch, Param, Delete, Inject, CACHE_MANAGER, UseFilters, Request } from '@nestjs/common';
-import { TestService } from './test.service';
-import { Cache } from 'cache-manager';
+import { Controller, Get, Post, Body, Delete, Request, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { SetCode } from 'src/functions/util.functions';
-import { LocalLoginDto } from '../auth/dto/local-login.dto';
+import { makeApiResponse, SetCode } from 'src/functions/util.functions';
+import { Logger } from 'nestjs-pino';
 
+@UseInterceptors(LoggingInterceptor)
 @Controller('test')
 @ApiTags('test')
 export class TestController {
   constructor(
     private readonly redisService: RedisService,
-    private readonly testService: TestService,
     private readonly utilService: UtilService,
     private readonly authService: AuthService,
-    private readonly connection: Connection
-  ) {}
+    private readonly connection: Connection,
+    private readonly logger: Logger
+    ) {}
 
   @Get('call')
   @SetCode(900)
   async call(@Request() req, @Body('access_token') accessToken: string){
     return await this.authService.validateOAuthAccessToken(accessToken, 'kakao');
   }
-
+  
   @Post('redis')
   @SetCode(900)
   async redisGet(@Body('key') key: string, @Body('val') val: number){
@@ -36,11 +35,13 @@ export class TestController {
     console.log(res);
     return res;
   }
+
   @Post('set')
   @SetCode(900)
   async redisSet(@Body('key') key: string, @Body('val') val: number){
+    this.logger.debug('hi! this is pino logger');
     await this.redisService.set(key, val)
-    return true;
+    return makeApiResponse(200, {test: true});
   }
 
   @Post('message')

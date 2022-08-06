@@ -1,8 +1,9 @@
+import { UtilService } from './../util/util.service';
 import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Controller, Get, Request, HttpStatus, Query } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
-import { SetCode, SetJwtAuth, makeApiResponse, parseReview, ApiResponses } from 'src/functions/util.functions';
+import { SetCode, SetJwtAuth, makeApiResponse, ApiResponses } from 'src/functions/util.functions';
 import { Connection } from 'typeorm';
 import { ProfileService } from './profile.service';
 import { SettingResponse } from './response/profile.response';
@@ -14,9 +15,10 @@ import { MyAccountResponse } from './response/myaccount.response';
 export class ProfileController {
   constructor(
     private readonly profileService: ProfileService,
+    private readonly utilService: UtilService,
     private connection: Connection
     ) {}
-  
+
 
   @ApiOperation({
     summary: '유저 프로필 info',
@@ -29,11 +31,11 @@ export class ProfileController {
   async getProfile(
     @AuthUser() user: AuthorizedUser,
     @AuthToken() tokens: Tokens
-    ){
+  ){
       const userId = user.id;
       const result = await this.profileService.getProfileInfo(userId);
       return makeApiResponse(HttpStatus.OK, {...result, tokens});
-    }
+  }
   
   @ApiOperation({
     summary: 'myinfo 스탯',
@@ -49,8 +51,7 @@ export class ProfileController {
   ){
     const userId = user.id;
     const reviews = await this.profileService.getMyInfo(userId);
-    const reviewData = parseReview(reviews);
-    
+    const reviewData = await this.utilService.parseReview(reviews);
     const result = {
       nickname: reviews[0].nickname,
       reviews: reviewData

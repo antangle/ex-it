@@ -1,6 +1,6 @@
 validateOAuthAccessToken 체크       v
 
-탈퇴시 5일동안 재가입 불가 ban        
+탈퇴시 5일동안 재가입 불가 ban        v
 
 CHAT                                v
 redis cache DB - save chat logs     x!
@@ -17,4 +17,11 @@ parent child category study         v
 
 대화방 유지 기능
 - call time 계산 기능 수정           v
-- room end 시 room_join의 host, guest 시간 update
+- room end 시 room_join의 host, guest 시간 update v
+
+
+1. socket으로 음성 보내는거 연구      v
+2. 소셜로그인 access token           ?
+3. value 보낼때 다 post로 바꾸기      v
+4. pgadmin db관리 성권님께 드리기     v
+5. api문서 정리                      v

@@ -1,3 +1,6 @@
+#docker
+docker-compose.yml
+
 # compiled output
 /dist
 /src/migrations
