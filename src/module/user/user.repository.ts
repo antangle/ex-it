@@ -24,7 +24,7 @@ export class UserRepository extends Repository<User> {
 
     //get max review count
     async getProfileQuery(param: string | number): Promise<any>{
-        const status = ['host', 'guest'];
+        const status = ['host', 'speaker'];
         let query = this.createQueryBuilder('user')
             .select('user.nickname AS nickname, user.alarm AS alarm')
             .addSelect([

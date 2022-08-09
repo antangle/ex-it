@@ -21,7 +21,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     async canActivate(context: ExecutionContext){
         const request: Request = context.switchToHttp().getRequest();
         const authorization: string = request.headers.authorization;
-        if(!authorization) throw new BadRequestCustomException(consts.JWT_NOT_EXIST, consts.JWT_STRATEGY_ERROR_CODE);
+        if(!authorization) throw new UnauthorizedUserException(consts.JWT_NOT_EXIST, consts.JWT_STRATEGY_ERROR_CODE);
         
         //at from Authorization, rt from custom header Refresh-Token
         const accessToken: string = authorization.replace('Bearer ', '').trim();
@@ -37,7 +37,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
             return true;
         }
         const refreshToken: string = request.get(consts.REFRESH_TOKEN_HEADER);
-        if(!refreshToken) throw new BadRequestCustomException(consts.JWT_NOT_EXIST, consts.JWT_STRATEGY_ERROR_CODE);
+        if(!refreshToken) throw new UnauthorizedUserException(consts.JWT_NOT_EXIST, consts.JWT_STRATEGY_ERROR_CODE);
         let decodedRefreshToken: any;
         //verify refresh token, if invalid, throw
         try{

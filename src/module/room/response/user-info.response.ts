@@ -1,22 +1,6 @@
 import { BaseOKResponseWithTokens } from 'src/response/response.dto';
 import { ApiProperty } from "@nestjs/swagger";
-
-abstract class UserInfoData {
-    @ApiProperty()
-    nickname: string;
-    
-    @ApiProperty()
-    alarm: boolean;
-    
-    @ApiProperty()
-    total_time: number;
-
-    @ApiProperty()
-    total_call: number;
-
-    @ApiProperty()
-    connection: number;
-}
+import { SettingResponseData } from 'src/module/profile/response/profile.response';
 
 export abstract class ReviewForm {
     @ApiProperty({
@@ -36,12 +20,24 @@ export abstract class ReviewForm {
 }
 
 abstract class UserInfoResponseData {
+
+    @ApiProperty({
+        description: '호스트 닉네임'
+    })
+    hostNickname: string;
+
+    @ApiProperty({
+        description: '스피커 닉네임'
+    })
+    speakerNickname: string;
+
     @ApiProperty()
-    userInfo: UserInfoData;
+    userInfo: SettingResponseData;
 
     @ApiProperty({
         isArray: true,
-        default: ['가정', '개인']
+        default: ['가정', '개인'],
+        description: '사용자가 가장 많이 사용한 태그들. 최대 3개'
     })
     usedTags: string;
 

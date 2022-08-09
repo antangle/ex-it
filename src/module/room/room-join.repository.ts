@@ -7,7 +7,7 @@ import consts from 'src/consts/consts';
 @EntityRepository(RoomJoin)
 export class RoomJoinRepository extends Repository<RoomJoin> {
     async getMostUsedTags(userId: number){
-        const status = ['host', 'guest'];
+        const status = ['host', 'speaker'];
         return await this.createQueryBuilder('room_join')
             .select('tag.name AS tag, COUNT(tag.id) AS count')
             .where('room_join.userId = :userId', {userId: userId})
@@ -33,5 +33,19 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
             .andWhere('status = :status', {status: status})
             .setParameters(updateRoomJoinDto)
             .execute();
+    }
+
+    async getHostAndSpeaker(roomId: number): Promise<any[]>{
+        const status = ['host', 'speaker'];
+        return await this.createQueryBuilder('room_join')
+            .select('user.nickname AS nickname')
+            .where('room_join.roomId = :roomId', {roomId: roomId})            
+            .andWhere('room_join.status IN (:...status)')
+            .setParameter('status', status)
+            .leftJoin('room_join.user', 'user')
+            .orderBy('room_join.status', 'ASC')
+            .addOrderBy('room_join.created_at', 'DESC')
+            .limit(2)
+            .getRawMany();
     }
 }

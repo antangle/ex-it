@@ -91,7 +91,7 @@ export class RoomController {
       createRoomDto.is_online = true;
       createRoomDto.roomname = roomname;
 
-      
+
       const { tags, custom_tags, ...roomDto } = createRoomDto;
       const customTags = custom_tags;
       const tagsLength = tags.length + custom_tags.length;
@@ -157,7 +157,7 @@ export class RoomController {
   @ApiOperation({
     summary: '유저 정보',
     description: `
-      해당 방에 접속한 host나 guest의 정보를 가져온다.
+      해당 방에 접속한 host나 speaker의 정보를 가져온다.
     `,
   })
   @ApiResponses(UserInfoResponse)
@@ -170,18 +170,22 @@ export class RoomController {
   ){
     const queryRunner: QueryRunner = this.connection.createQueryRunner();
     const roomId = userInfoDto.room_id;
-    //status: host | guest
+    //status: host | speaker
     const status = userInfoDto.status;
     try{
       await queryRunner.connect();
       await queryRunner.startTransaction();
 
+      const nicknames = await this.roomService.getHostAndSpeakerNicknames(roomId);
+      const hostNickname = nicknames[0].nickname;
+      let speakerNickname = null;
+      if(nicknames.length > 1) speakerNickname = nicknames[1].nickname;
       const targetUserId = await this.roomService.getUserIdFromStatus(roomId, status, queryRunner);
       const result = await this.roomService.getUserInfo(targetUserId, queryRunner);
-
+      
       await queryRunner.commitTransaction();
 
-      return makeApiResponse(HttpStatus.OK, {...result, tokens});
+      return makeApiResponse(HttpStatus.OK, {hostNickname, speakerNickname, ...result, tokens});
     } catch(err){
       await queryRunner.rollbackTransaction();
       throw err;
@@ -212,7 +216,7 @@ export class RoomController {
     summary: '방 종료',
     description: `
       host는 방을 continue 시킬지 말지 결정할 수 있다. host에서 결정할 시 해당 room의 값들을 수정한다.
-      guest나 observer라면 자신의 대화 시간만 업데이트하고 끝낸다.
+      speaker나 guest라면 자신의 대화 시간만 업데이트하고 끝낸다.
     `,
   })
   @ApiResponses(BaseOKResponseWithTokens)
@@ -246,11 +250,11 @@ export class RoomController {
         await this.roomService.updateRoomOnline(roomId, updateRoomDto);
       }
 
-      if(roomEndDto.status != Status.OBSERVER){
+      if(roomEndDto.status != Status.GUEST){
         // 리뷰를 남길 때.
         if(roomEndDto.review_id != 0){
           //get fellow id from roomJoin
-          let status = roomEndDto.status == Status.GUEST? Status.HOST : Status.GUEST;
+          let status = roomEndDto.status == Status.SPEAKER? Status.HOST : Status.SPEAKER;
           const fellowId = await this.roomService.getUserIdFromStatus(roomId, status);
 
           const review = this.roomService.makeReview(roomEndDto, fellowId);
@@ -302,11 +306,11 @@ export class RoomController {
   }
 
   @ApiOperation({
-    summary: '해당 room에 guest가 있는지 체크',
-    description: '해당 room의 guest자리가 비어있는지 체크. 차있으면 true, 비어있으면 false',
+    summary: '해당 room에 speaker가 있는지 체크',
+    description: '해당 room의 speaker자리가 비어있는지 체크. 차있으면 true, 비어있으면 false',
   })
   @ApiResponses(OccupiedResponse)
-  //true if guest is talking, else false  
+  //true if speaker is talking, else false  
   @SetJwtAuth()
   @SetCode(209)
   @Post('check_occupied')
@@ -324,8 +328,8 @@ export class RoomController {
     summary: '채팅방 입장',
     description: `
       성공시 response code 200, 202이 존재한다.\n
-      200: observer로 입장하였거나, guest가 없어 채팅방 입장을 guest로 성공한 상태.\n
-      202: 이미 다른 guest가 join한 상태
+      200: guest로 입장하였거나, speaker가 없어 채팅방 입장을 speaker로 성공한 상태.\n
+      202: 이미 다른 speaker가 join한 상태
     `,
   })
   @ApiAcceptedResponse({
@@ -351,7 +355,7 @@ export class RoomController {
     try{
       await queryRunner.connect();
       await queryRunner.startTransaction();
-      if(status == Status.GUEST){
+      if(status == Status.SPEAKER){
         const isOccupied = await this.roomService.checkOccupied(roomId);
         //if someone already joined in room.
         if(isOccupied && isOccupied >= new Date()) return makeApiResponse(HttpStatus.ACCEPTED, consts.ALREADY_OCCUPIED)

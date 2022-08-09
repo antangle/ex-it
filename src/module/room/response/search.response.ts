@@ -18,7 +18,7 @@ abstract class SearchResponseData {
     title: string;
     
     @ApiProperty()
-    observer: boolean;
+    guest: boolean;
     
     @ApiProperty({
         default: '1f90zs'

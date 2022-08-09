@@ -1,4 +1,4 @@
-import { LoggingInterceptor } from './../../interceptor/logging.interceptor';
+import { BadRequestCustomException } from './../../exception/bad-request.exception';
 import { RedisService } from './../redis/redis.service';
 import { CreateAuthDto } from './../auth/dto/create-auth.dto';
 import { User } from 'src/entities/user.entity';
@@ -8,9 +8,7 @@ import { UtilService } from '../util/util.service';
 import { Controller, Get, Post, Body, Delete, Request, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { makeApiResponse, SetCode } from 'src/functions/util.functions';
-import { Logger } from 'nestjs-pino';
 
-@UseInterceptors(LoggingInterceptor)
 @Controller('test')
 @ApiTags('test')
 export class TestController {
@@ -19,7 +17,6 @@ export class TestController {
     private readonly utilService: UtilService,
     private readonly authService: AuthService,
     private readonly connection: Connection,
-    private readonly logger: Logger
     ) {}
 
   @Get('call')
@@ -39,7 +36,7 @@ export class TestController {
   @Post('set')
   @SetCode(900)
   async redisSet(@Body('key') key: string, @Body('val') val: number){
-    this.logger.debug('hi! this is pino logger');
+    throw new BadRequestCustomException('hi', 10101, {data: 'hi'});
     await this.redisService.set(key, val)
     return makeApiResponse(200, {test: true});
   }

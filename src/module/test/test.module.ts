@@ -9,7 +9,6 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Module, CacheModule } from '@nestjs/common';
 import { TestService } from './test.service';
 import { TestController } from './test.controller';
-import { LoggerModule } from 'nestjs-pino';
 
 @Module({
   imports: [

@@ -12,14 +12,14 @@ import consts from 'src/consts/consts';
 @EntityRepository(Room)
 export class RoomRepository extends Repository<Room> {
     async getAllRoomsPaged(page: number = 0, take: number = consts.PAGINATION_TAKE){
-        const status = ['host', 'guest'];
+        const status = ['host', 'speaker'];
         return await this.createQueryBuilder('room')
             .select([
                 'room.id', 
                 'room.hardcore', 
                 'room.created_at', 
                 'room.title',
-                'room.observer',
+                'room.guest',
                 'room.nickname',
             ])
             .addSelect('tag_array.tags, tag_array.tagIds')
@@ -50,7 +50,7 @@ export class RoomRepository extends Repository<Room> {
     ){
         
         const {tag_id, title, take, page} = searchRoomDto;
-        const status = 'observer';
+        const status = 'guest';
         let query = await this.createQueryBuilder('room')
             .distinct(true) 
             .select([
@@ -58,13 +58,13 @@ export class RoomRepository extends Repository<Room> {
                 'room.hardcore AS hardcore', 
                 'room.created_at AS created_at', 
                 'room.title AS title',
-                'room.observer AS observer',    
+                'room.guest AS guest',    
                 'room.nickname AS nickname',
                 'room.is_occupied AS is_occupied',
                 'room.roomname AS roomname'
             ])
             .addSelect('tag_array.tags, tag_array.tagIds')
-            .addSelect('observer.observers')
+            .addSelect('guest.guests')
             .where('room.is_online = true')
             .andWhere('room.title LIKE :title', {title: `%${title}%`})
             //ban list
@@ -86,11 +86,11 @@ export class RoomRepository extends Repository<Room> {
                     .groupBy('room_tag.roomId')
             }, 'tag_array', 'tag_array.roomId = room.id')
             .leftJoin((qb) => {
-                return qb.select('room_join.roomId AS roomId, COUNT(*) AS observers')
+                return qb.select('room_join.roomId AS roomId, COUNT(*) AS guests')
                     .from(RoomJoin, 'room_join')
                     .where('room_join.status = :status')
                     .groupBy('room_join.roomId')
-                }, 'observer', 'observer.roomId = room.id')
+                }, 'guest', 'guest.roomId = room.id')
             .setParameter('status', status)
                 
 
@@ -108,11 +108,11 @@ export class RoomRepository extends Repository<Room> {
 
     }
 
-    async observerCount(roomId: number){
+    async guestCount(roomId: number){
         return this.createQueryBuilder('room')
             .select('COUNT(room_join.*) AS count')
             .where('room.id = :roomId', {roomId: roomId})
-            .andWhere('room_join.status = :observer', {observer : "observer"})
+            .andWhere('room_join.status = :status', {status : "guest"})
             .leftJoin('room.room_join', 'room_join')
             .groupBy('room_join.roomId')
             .getRawOne()

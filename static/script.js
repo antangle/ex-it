@@ -45,7 +45,7 @@ const initStream = async () => {
     peer.on('open', peerId => {
         console.log(`peer open with id: ${peerId}`);
         const data = {
-            roomId: roomId,
+            roomname: roomname,
             peerId: peerId,
             nickname: 'mynickname'
         }

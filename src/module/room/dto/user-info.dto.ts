@@ -18,7 +18,7 @@ export class UserInfoDto {
 
     @ApiProperty({
         default: 'host',
-        description: 'host | guest'
+        description: 'host | speaker'
     })
     @IsEnum(Status)
     @IsOptional()

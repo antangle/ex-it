@@ -20,11 +20,11 @@ export class CreateRoomDto {
     hardcore: boolean;
 
     @ApiProperty({
-        description: '옵저버 유무',
+        description: '게스트 유무',
         default: true
     })
     @IsBoolean()
-    observer: boolean;
+    guest: boolean;
     
     @ApiHideProperty()
     @IsOptional()

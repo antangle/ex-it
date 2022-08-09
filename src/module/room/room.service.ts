@@ -245,6 +245,20 @@ export class RoomService {
         }
     }
 
+    async getHostAndSpeakerNicknames(roomId: number, queryRunner?: QueryRunner): Promise<any[]>{
+        const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
+        try{
+            const roomjoins = await roomJoinRepository.getHostAndSpeaker(roomId);
+            if(!roomjoins) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_HOST_AND_SPEAKER_ERROR_CODE);
+
+            return roomjoins;
+        } catch(err){
+            if(err instanceof NotExistsException) throw err;
+            else if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.GET_HOST_AND_SPEAKER_ERROR_CODE, err);
+            else throw new UnhandledException(this.getHostAndSpeakerNicknames.name, consts.GET_HOST_AND_SPEAKER_ERROR_CODE, err);
+        }
+    }
+
     async updateRoomOnline(roomId: number, updateRoomDto: UpdateRoomDto, queryRunner?: QueryRunner){
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
@@ -299,12 +313,12 @@ export class RoomService {
             const room = await roomRepository.findOne(roomId);
             if(!room) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.FIND_ROOM_ERROR_CODE);
             const talk_time = Math.floor((Date.now() - room.is_occupied.getTime()) / 1000);
-            let countObservers = await roomRepository.observerCount(roomId);
-            let observers;
-            if(!countObservers) observers = 0;
-            else observers = countObservers.count
+            let countGuests = await roomRepository.guestCount(roomId);
+            let guests;
+            if(!countGuests) guests = 0;
+            else guests = countGuests.count
 
-            return {talk_time: talk_time, observer_count: observers};
+            return {talk_time: talk_time, guest_count: guests};
         } catch(err){
             if(err instanceof DatabaseException) throw err;
             else throw new UnhandledException(this.findRoom.name, consts.FIND_ROOM_ERROR_CODE, err);

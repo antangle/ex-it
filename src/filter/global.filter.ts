@@ -1,3 +1,4 @@
+import { ApiResult } from './../types/user.d';
 import { TooManyRequestException } from './../exception/bad-request.exception';
 import { NoNicknameAvailableException } from './../exception/no-nickname.exception';
 import { NotExistsException } from '../exception/not-exist.exception';
@@ -9,14 +10,18 @@ import { UnhandledException } from './../exception/unhandled.exception';
 import { DatabaseException, UserExistsException } from './../exception/database.exception';
 import { CustomError } from './../exception/custom.exception';
 import { OauthHttpException } from './../exception/axios.exception';
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, BadRequestException, NotFoundException } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, BadRequestException, NotFoundException, Inject, LoggerService } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { BaseExceptionFilter, Reflector } from '@nestjs/core';
 import { generateCode, makeApiResponse } from 'src/functions/util.functions';
 import consts from 'src/consts/consts';
+import { WinstonLogger, WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Catch()
 export class GlobalExceptionFilter extends BaseExceptionFilter {
+  constructor(private logger: LoggerService){
+    super()
+  }
 
   catch(exception: Error, host: ArgumentsHost) {
     const ctx = host.switchToHttp();
@@ -25,14 +30,10 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
 
     //for logging
     let code = req.endpoint;
-    let msg = 'something wrong';
     let data;
-
-    console.log(exception.constructor);
-    console.log(exception);
     
     //for api response
-    let apiResponse;
+    let apiResponse: ApiResult;
     switch(exception.constructor){
       case UnauthorizedUserException:
         apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, consts.UNAUTHORIZED_USER)
@@ -67,9 +68,38 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
       case UnhandledException:
         apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
         break;
+      case UnhandledException:
+        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
+        break;
       default:
         apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
         break;
+    }
+
+    if(exception instanceof CustomError){
+      this.logger.warn(`errorCode: ${code}${exception.code}`)
+      this.logger.warn(exception.data);
+    }
+
+    //client request error
+    if(apiResponse.code >= 400 && apiResponse.code < 500){
+  
+      //log request
+      const { method, url, body } = req;
+      this.logger.warn(`req: ${method} | ${url} | body: ${JSON.stringify(body)}`)
+  
+      //log response
+      this.logger.warn(`res: ${JSON.stringify(apiResponse)}`);
+    } 
+    //server error
+    else{
+  
+      //log request
+      const { method, url, body } = req;
+      this.logger.error(`req: ${method} | ${url} | body: ${JSON.stringify(body)}`)
+  
+      //log response
+      this.logger.error(`res: ${JSON.stringify(apiResponse)}`);
     }
 
     res.json(apiResponse);

@@ -12,7 +12,8 @@ import { UtilModule } from './module/util/util.module';
 import { ProfileModule } from './module/profile/profile.module';
 import { RoomModule } from './module/room/room.module';
 import { ChatModule } from './chat/chat.module';
-import { LoggerModule } from 'nestjs-pino';
+import { utilities as nestWinstonModuleUtilities, WinstonModule } from 'nest-winston';
+import * as winston from 'winston';
 
 @Module({
   imports: [
@@ -20,18 +21,16 @@ import { LoggerModule } from 'nestjs-pino';
       isGlobal: true,
       envFilePath: process.env.DEVMODE == 'dev' ? '.env.dev' : '.env'
     }),
-    LoggerModule.forRootAsync({
-      imports: [ ConfigModule ],
-      useFactory: async (configService: ConfigService) => {
-        return configService.get('DEVMODE') ? {
-            pinoHttp: {
-              transport: {
-                target:  'pino-pretty'
-              }
-            }
-        } : {};
-      },
-      inject: [ ConfigService ]
+    WinstonModule.forRoot({
+      transports: [
+        new winston.transports.Console({
+          level: process.env.DEVMODE === 'dev' ? 'silly': 'info',
+          format: winston.format.combine(
+            winston.format.timestamp(),
+            nestWinstonModuleUtilities.format.nestLike('MyApp', { prettyPrint: true }),
+          ),
+        }),
+      ],
     }),
     CacheModule.register(),
     MyTypeormModule,

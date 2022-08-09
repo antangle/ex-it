@@ -25,3 +25,16 @@ parent child category study         v
 3. value 보낼때 다 post로 바꾸기      v
 4. pgadmin db관리 성권님께 드리기     v
 5. api문서 정리                      v
+
+
+logging - websocket logging         v
+          error logging             v
+          input output log?         v 굳이?
+
+testing                             ..
+
+
+user_info에서 nickname 2개 가져오기  v
+
+guest -> speaker                    v
+observer -> guest                   v

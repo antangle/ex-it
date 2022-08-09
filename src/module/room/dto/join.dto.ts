@@ -5,7 +5,7 @@ import { StatusWithoutHost } from "src/consts/enum";
 
 export class JoinRoomDto {
     @ApiProperty({
-        description: 'guest | observer'
+        description: 'speaker | guest'
     })
     @IsEnum(StatusWithoutHost)
     status: string;

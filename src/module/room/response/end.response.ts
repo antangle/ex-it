@@ -7,15 +7,15 @@ abstract class GetEndResponseData {
 
     @ApiProperty({
         default: 120,
-        description: '대화한 총 시간. 초(s)단위. guest가 host의 방에 접속한 그 순간부터 시간을 센다. 프론트에서 시간을 관리해야하나?'
+        description: '대화한 총 시간. 초(s)단위. speaker가 host의 방에 접속한 그 순간부터 시간을 센다. 프론트에서 시간을 관리해야하나?'
     })
     talk_time: number;
 
     @ApiProperty({
         default: 23,
-        description: '지금까지 이 방에 옵저버로 들어온 사람들의 총 수'
+        description: '지금까지 이 방에 게스트로 들어온 사람들의 총 수'
     })
-    observer_count: number;
+    guest_count: number;
 
     @ApiProperty({
         isArray: true,

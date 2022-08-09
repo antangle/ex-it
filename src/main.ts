@@ -1,3 +1,4 @@
+import { WinstonLogger, WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { asyncApiOptions } from './config/asyncapi.config';
 import { GlobalExceptionFilter } from './filter/global.filter';
 import { SocketIoAdapter } from './config/socketio.adapter';
@@ -11,7 +12,6 @@ import { SwaggerModule } from '@nestjs/swagger';
 import swaggerConfig from './config/swagger.config';
 import { getServer } from './config/https.config';
 import { AsyncApiModule } from 'nestjs-asyncapi';
-import { Logger } from 'nestjs-pino';
 
 async function bootstrap() {
   const devmode = process.env.DEVMODE;
@@ -51,13 +51,17 @@ async function bootstrap() {
     }
   });
 
+  //logger
+  const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);
+  app.useLogger(logger);
+
+  //filter
+  app.useGlobalFilters(new GlobalExceptionFilter(logger));
+
   //asyncapi
   const asyncapiDocument = await AsyncApiModule.createDocument(app, asyncApiOptions);
   await AsyncApiModule.setup('/async-api', app, asyncapiDocument);
-  app.useGlobalFilters(new GlobalExceptionFilter());
-
-  //logger
-  app.useLogger(app.get(Logger));
+  
 
   //for localhost ssl config!!
   const webSocketServer = getServer(devmode, server);

@@ -4,7 +4,8 @@ export = {
     LIMIT_MOST_USED_TAGS: 3,
     PAGINATION_TAKE: 20,
     LOCAL: 'local',
-
+    SPEAKER: 'speaker',
+    GUEST: 'guest',
     //sens
     SENS_DEFAULT: '[ex-it!]',
     SMS: 'SMS',
@@ -58,6 +59,8 @@ export = {
     ALREADY_OCCUPIED: 'room already occupied',
     SENS_RESPONSE_ERROR: 'http response error',
     TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
+    WS_VALIDATION_EXCEPTION: 'websocket validation error',
+    WS_NOT_JSON_EXCEPTION: 'data is not in json format',
     //Error codes
     SIGNIN_ERROR_CODE: 1,
     LOCAL_STRATEGY_ERROR_CODE: 2,
@@ -106,4 +109,6 @@ export = {
     SEND_MESSAGE_ERROR_CODE: 45,
     VERIFY_REQUEST_ERR_CODE: 46,
     GET_REVIEW_MAPPER_ERR_CODE: 47,
+    GET_HOST_AND_SPEAKER_ERROR_CODE: 48,
+    VALIDATION_ERROR_CODE: 49,
 }

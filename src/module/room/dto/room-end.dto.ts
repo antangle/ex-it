@@ -45,7 +45,7 @@ export class RoomEndDto {
     total_time: number;
 
     @ApiProperty({
-        description: 'host | guest | observer',
+        description: 'host | speaker | guest',
         default: 'host'
     })
     @IsEnum(Status)

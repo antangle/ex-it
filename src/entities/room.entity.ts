@@ -44,7 +44,7 @@ export class Room {
   created_at?: Date;
 
   @Column()
-  observer?: boolean;
+  guest?: boolean;
 
   @ApiHideProperty()
   //checks if this room is online
