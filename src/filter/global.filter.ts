@@ -14,7 +14,7 @@ import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, BadRe
 import { Request, Response } from 'express';
 import { BaseExceptionFilter, Reflector } from '@nestjs/core';
 import { generateCode, makeApiResponse } from 'src/functions/util.functions';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 import { WinstonLogger, WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Catch()

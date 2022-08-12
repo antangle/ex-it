@@ -2,7 +2,7 @@ import { UpdateRoomJoinDto } from './dto/room-join-update.dto';
 import { RoomJoin } from '../../entities/roomJoin.entity';
 import { Repository } from 'typeorm';
 import { EntityRepository } from 'typeorm';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 
 @EntityRepository(RoomJoin)
 export class RoomJoinRepository extends Repository<RoomJoin> {

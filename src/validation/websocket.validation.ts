@@ -2,7 +2,7 @@ import { PipeTransform, Injectable, ArgumentMetadata, ValidationPipe } from '@ne
 import { validate } from 'class-validator';
 import { plainToClass } from 'class-transformer';
 import { WsException } from '@nestjs/websockets';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 import { WsValidationException } from 'src/exception/ws.exception';
 
 @Injectable()

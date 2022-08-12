@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 import { ApiProperty } from "@nestjs/swagger";
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 
 export abstract class TokenData {
     @ApiProperty({

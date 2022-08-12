@@ -1,4 +1,4 @@
-export = {
+export const consts = {
     //normal consts
     OK: 200,
     LIMIT_MOST_USED_TAGS: 3,

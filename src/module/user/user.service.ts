@@ -5,7 +5,7 @@ import { QueryRunner } from 'typeorm';
 import { UnhandledException } from './../../exception/unhandled.exception';
 import { DatabaseException, UserExistsException } from './../../exception/database.exception';
 import { AuthRepository } from '../auth/auth.repository';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 import { UserRepository } from './user.repository';
 import { ConsoleLogger, Injectable } from '@nestjs/common';
 import { User } from 'src/entities/user.entity';

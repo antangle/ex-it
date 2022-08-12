@@ -7,7 +7,7 @@ import { Tag } from './../../entities/tag.entity';
 import { Repository } from 'typeorm';
 import { EntityRepository } from 'typeorm';
 import { Room } from '../../entities/room.entity'
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 
 @EntityRepository(Room)
 export class RoomRepository extends Repository<Room> {

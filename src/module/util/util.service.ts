@@ -2,18 +2,18 @@ import { ReviewMapper } from './../../entities/reviewMapper.entity';
 import { SensHttpException } from './../../exception/axios.exception';
 import { AuthorizedUser } from './../../types/user.d';
 import { TokenData } from 'src/response/response.dto';
-import { Observable, lastValueFrom } from 'rxjs';
+import { lastValueFrom } from 'rxjs';
 import { HttpService } from '@nestjs/axios';
 import { User } from 'src/entities/user.entity';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import { Injectable, HttpStatus, UseFilters, HttpException } from '@nestjs/common';
-import consts from 'src/consts/consts';
-import * as bcrypt from 'bcrypt';
+import { Injectable } from '@nestjs/common';
 import { AxiosRequestConfig, AxiosResponse } from 'axios';
-import * as CryptoJS from 'crypto-js';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as bcrypt from 'bcrypt';
+import * as CryptoJS from 'crypto-js';
+import { consts } from 'src/consts/consts';
 
 @Injectable()
 export class UtilService {

@@ -20,7 +20,7 @@ import { Tag } from './../../entities/tag.entity';
 import { QueryRunner } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 import { Room } from 'src/entities/room.entity';
 
 @Injectable()

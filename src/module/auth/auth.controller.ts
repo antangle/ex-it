@@ -14,12 +14,12 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from '../../guard/localAuth.guard';
 import { Body, Controller, Get, Post, Request, UseGuards, HttpStatus, Param, Query } from '@nestjs/common';
 import { CreateUserDto } from 'src/module/user/dto/create-user.dto';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 import { ApiResponses, makeApiResponse, SetCode, SetJwtAuth } from 'src/functions/util.functions';
-import { ApiBadRequestResponse, ApiBody, ApiInternalServerErrorResponse, ApiOkResponse, ApiOperation, ApiQuery, ApiTags, ApiTooManyRequestsResponse, ApiUnauthorizedResponse } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiQuery, ApiTags, ApiTooManyRequestsResponse } from '@nestjs/swagger';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { BadRequestResponse, BaseOKResponse, BaseOKResponseWithTokens, InternalServerErrorResponse, UnauthorizedResponse, TokenData, TooManyRequestResponse } from 'src/response/response.dto';
+import { BaseOKResponse, BaseOKResponseWithTokens, InternalServerErrorResponse, UnauthorizedResponse, TokenData, TooManyRequestResponse } from 'src/response/response.dto';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { CheckEmailResponse } from './response/auth.response';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
@@ -53,7 +53,6 @@ export class AuthController {
         const tokens = await this.authService.signIn(user);
         return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
     }
-
 
     @ApiOperation({
         summary: 'logout user',

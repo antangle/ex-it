@@ -1,7 +1,7 @@
 import { ReviewMapper } from './../../entities/reviewMapper.entity';
 import { NotExistsException } from 'src/exception/not-exist.exception';
 import { UnhandledException } from './../../exception/unhandled.exception';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 import { DatabaseException } from './../../exception/database.exception';
 import { User } from 'src/entities/user.entity';
 import { UserRepository } from './../user/user.repository';

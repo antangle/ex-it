@@ -1,5 +1,5 @@
 import { UtilService } from '../module/util/util.service';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 import { AuthService } from '../module/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
 import { ExecutionContext, HttpException, HttpStatus, Injectable, NotFoundException } from '@nestjs/common';

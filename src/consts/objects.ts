@@ -1,4 +1,4 @@
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 import { ApiHeaderOptions } from "@nestjs/swagger";
 
 export const apiHeaderOptions: ApiHeaderOptions = {

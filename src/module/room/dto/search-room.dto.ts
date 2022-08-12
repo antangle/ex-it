@@ -2,7 +2,7 @@ import { User } from './../../../entities/user.entity';
 import { IsArray, isBoolean, IsBoolean, IsDate, IsNumber, IsOptional, isString, IsString, ValidateNested } from "class-validator";
 import { Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 
 export class SearchRoomDto {
 

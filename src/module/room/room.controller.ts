@@ -26,7 +26,7 @@ import { CreateRoomResponse } from './response/create.response';
 import { SearchRoomResponse } from './response/search.response';
 import { UserInfoResponse } from './response/user-info.response';
 import { GetEndRoomResponse } from './response/end.response';
-import consts from 'src/consts/consts';
+import { consts } from 'src/consts/consts';
 import { OccupiedResponse } from './response/occupied.response';
 import { OccupiedAcceptedResponse } from './response/occupied-accepted.response';
 

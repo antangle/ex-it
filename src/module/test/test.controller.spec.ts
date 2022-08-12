@@ -1,4 +1,4 @@
-import { Test, TestingModule } from '@nestjs/testing';
+/* import { Test, TestingModule } from '@nestjs/testing';
 import { TestController } from './test.controller';
 import { TestService } from './test.service';
 
@@ -14,7 +14,5 @@ describe('TestController', () => {
     controller = module.get<TestController>(TestController);
   });
 
-  it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
 });
+ */

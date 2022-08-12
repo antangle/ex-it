@@ -1,3 +1,4 @@
+import { LeaveDto, LeavedDto } from './dto/leave.dto';
 import { PeerJoinDto, PeerConnectedDto } from './dto/peer-join.dto';
 import { SocketValidationPipe } from './../validation/websocket.validation';
 import { WebsocketLoggingInterceptor } from './../interceptor/websocket.interceptor';
@@ -16,7 +17,9 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
 
 
 //let origin = process.env.DEVMODE == 'dev' ? `https://localhost` : `https://ex-it.app`;
-@AsyncApiService()
+@AsyncApiService({
+  serviceName: "socket.io-chat"
+})
 @UseInterceptors(WebsocketLoggingInterceptor)
 @WebSocketGateway({
   transports: ['websocket', 'polling'], 
@@ -151,7 +154,7 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
     message: {
       name: 'data',
       payload: {
-        type: JoinDto
+        type: LeaveDto
       },
     },
   })
@@ -162,17 +165,20 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
     message: {
       name: 'data',
       payload: {
-        type: null
+        type: LeavedDto
       },
     },
   })
   @SubscribeMessage('leave')
   async tempLeave(
       @ConnectedSocket() socket: Socket,
-      @MessageBody(new SocketValidationPipe()) data: JoinDto
+      @MessageBody(new SocketValidationPipe()) data: LeaveDto
   ) {
     await socket.leave(data.roomname);
-    socket.to(data.roomname).emit('leaved', {});
+    const payload: LeavedDto = {
+      nickname: data.nickname
+    }
+    socket.to(data.roomname).emit('leaved', payload);
   }
 
 }
