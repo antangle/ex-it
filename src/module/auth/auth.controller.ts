@@ -298,9 +298,11 @@ export class AuthController {
     @SetJwtAuth()
     @SetCode(109)
     @Post('quit')
-    async quit(@Request() req){
-        const email = req.user.email;
-        await this.userService.softDelete(email);
+    async quit(
+        @AuthUser() user: AuthorizedUser,
+    ){
+        const userId = user.id;
+        await this.userService.softDelete(userId);
         return makeApiResponse(HttpStatus.OK);
     }
 

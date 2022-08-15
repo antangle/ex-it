@@ -64,7 +64,7 @@ export class RoomRepository extends Repository<Room> {
                 'room.roomname AS roomname'
             ])
             .addSelect('tag_array.tags, tag_array.tagIds')
-            .addSelect('guest.guests')
+            .addSelect('COALESCE(guest.guest_count::INTEGER, 0) AS guest_count')
             .where('room.is_online = true')
             .andWhere('room.title LIKE :title', {title: `%${title}%`})
             //ban list
@@ -86,7 +86,7 @@ export class RoomRepository extends Repository<Room> {
                     .groupBy('room_tag.roomId')
             }, 'tag_array', 'tag_array.roomId = room.id')
             .leftJoin((qb) => {
-                return qb.select('room_join.roomId AS roomId, COUNT(*) AS guests')
+                return qb.select('room_join.roomId AS roomId, COUNT(room_join.status) AS guest_count')
                     .from(RoomJoin, 'room_join')
                     .where('room_join.status = :status')
                     .groupBy('room_join.roomId')

@@ -1,3 +1,4 @@
+import { WinstonLogger, WinstonModule } from 'nest-winston';
 import { UserRepository } from 'src/module/user/user.repository';
 import { AuthRepository } from 'src/module/auth/auth.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,6 +13,6 @@ import { Module } from "@nestjs/common";
     ],
     providers: [
         TasksService
-    ]
+    ],
 })
 export class MyScheduleModule {}

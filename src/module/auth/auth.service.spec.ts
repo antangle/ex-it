@@ -1,12 +1,8 @@
 import { User } from './../../entities/user.entity';
 import { UtilService } from './../util/util.service';
-import { TypeOrmTestConfig } from './../../database/typeorm.test';
-import { TypeOrmConfig } from './../../database/typeorm.service';
 import { UtilModule } from './../util/util.module';
 import { UserRepository } from './../user/user.repository';
-import { AuthRepository } from './auth.repository';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { getRepositoryToken, TypeOrmModule } from '@nestjs/typeorm';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthService } from './auth.service';
 import { Repository } from 'typeorm';

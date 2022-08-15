@@ -1,7 +1,6 @@
 import { OauthType } from './../../../consts/enum';
 import { ApiProperty } from "@nestjs/swagger";
 import { IsBoolean, IsEmail, IsEnum, IsString } from "class-validator";
-import consts from "src/consts/consts";
 
 export class OAuthSignInDto {
 

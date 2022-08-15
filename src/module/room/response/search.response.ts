@@ -17,7 +17,9 @@ abstract class SearchResponseData {
     })
     title: string;
     
-    @ApiProperty()
+    @ApiProperty({
+        description: '게스트가 들어올 수 있는 방인지 아닌지의 유무. true = 가능 false = 불가능'
+    })
     guest: boolean;
     
     @ApiProperty({
@@ -40,6 +42,11 @@ abstract class SearchResponseData {
     })
     tagids: number;
     
+    @ApiProperty({
+        default: 21,
+        description: '게스트 카운트.'
+    })
+    guest_count: number;
 }
 
 export abstract class SearchRoomResponse extends BaseOKResponseWithTokens{

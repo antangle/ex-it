@@ -1,6 +1,7 @@
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { User } from 'src/entities/user.entity';
 import { AuthRepository } from 'src/module/auth/auth.repository';
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { UserRepository } from 'src/module/user/user.repository';
 import { Connection } from 'typeorm';
@@ -11,7 +12,9 @@ export class TasksService {
   constructor(
     private readonly userRepository: UserRepository,
     private readonly authRepository: AuthRepository,
-    private readonly connection: Connection
+    private readonly connection: Connection,
+    @Inject(WINSTON_MODULE_NEST_PROVIDER)
+    private logger: Logger
   ){}
   @Cron('0 4 * * *')
   async handleCron() {
@@ -28,7 +31,7 @@ export class TasksService {
         .returning('*')
         .execute()
 
-      console.log('deleted quit users at 4:00')
+      this.logger.log('deleted quit users:', deleted)
       await queryRunner.commitTransaction();
     } catch(err){
         await queryRunner.rollbackTransaction();

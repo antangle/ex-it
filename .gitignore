@@ -1,5 +1,11 @@
+todo.txt
+
+#excel
+*.xlsx
+
 #docker
-docker-compose.yml
+*.yml
+
 
 # compiled output
 /dist
