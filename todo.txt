@@ -38,3 +38,6 @@ user_info에서 nickname 2개 가져오기  v
 
 guest -> speaker                    v
 observer -> guest                   v
+
+soft delete 오류 해결               v
+firebase 푸시

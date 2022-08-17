@@ -16,8 +16,9 @@ export class SocketValidationPipe implements PipeTransform<any> {
     if (!metatype || !this.toValidate(metatype)) {
       return value;
     }
+    let json;
     try{
-      value = JSON.parse(value);
+      value = JSON.parse(value as string);
     } catch(err){
       throw new WsValidationException(consts.WS_NOT_JSON_EXCEPTION, consts.VALIDATION_ERROR_CODE, value)
     }

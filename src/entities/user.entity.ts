@@ -38,7 +38,8 @@ export class User {
     alarm?: boolean = false;
 
     @Index({
-        unique: true
+        unique: true,
+        where: 'deleted_at IS NULL'
     })
     @Column()
     email?: string;

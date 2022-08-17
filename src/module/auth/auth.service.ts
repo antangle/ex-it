@@ -154,4 +154,18 @@ export class AuthService {
             else throw new OauthHttpException(consts.INVALID_OAUTH_TOKEN, consts.OAUTH_VALIDATE_ERROR_CODE, err.response.data);
         }
     }
+
+    async quit(userId: number, queryRunner: QueryRunner){
+        const userRepository = queryRunner ? queryRunner.manager.getCustomRepository(UserRepository) : this.userRepository;
+        const authRepository = queryRunner ? queryRunner.manager.getCustomRepository(AuthRepository) : this.authRepository;
+        
+        try{
+            await userRepository.softDelete(userId);
+            await authRepository.softDelete({userId: userId});
+        } catch(err){
+            if(err instanceof UnauthorizedUserException) throw err;
+            else throw new OauthHttpException(consts.INVALID_OAUTH_TOKEN, consts.OAUTH_VALIDATE_ERROR_CODE, err.response.data);
+        }
+    }
+
 }

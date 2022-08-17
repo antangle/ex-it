@@ -3,7 +3,8 @@ import { BaseOKResponseWithTokens, BaseOKResponse } from "src/response/response.
 
 abstract class CheckEmailResponseData {
     @ApiProperty({
-        default: true
+        default: true,
+        description: '이메일이 사용 가능하면 true. 이메일이 이미 존재하면 false.'
     })
     available: boolean;
 }

@@ -14,6 +14,7 @@ export class AuthRepository extends Repository<Auth> {
             .andWhere('type = :type', {
                 type: type
             })
+            .andWhere('deleted_at IS NULL')
             .returning('*')
             .execute();
     }

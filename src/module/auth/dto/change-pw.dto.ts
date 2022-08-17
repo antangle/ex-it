@@ -10,10 +10,10 @@ export class ChangePwDto {
     old_pw?: string;
     
     @ApiProperty({
-        default: 'oldpassword'
+        default: 'newpassword'
     })
     @IsString()
-    old_pw_re?: string;
+    new_pw_re?: string;
     
     @ApiProperty({
         default: 'newpassword'

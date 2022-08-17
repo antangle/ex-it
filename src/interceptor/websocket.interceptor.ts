@@ -2,6 +2,7 @@ import { Injectable, NestInterceptor, ExecutionContext, CallHandler, LoggerServi
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
+import { cli } from 'winston/lib/winston/config';
 
 @Injectable()
 export class WebsocketLoggingInterceptor implements NestInterceptor {
@@ -9,6 +10,8 @@ export class WebsocketLoggingInterceptor implements NestInterceptor {
 
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         let data = context.switchToWs().getData();
+        let client = context.switchToWs().getClient();
+        this.logger.log(`socket client id: ${client.id}`);
         this.logger.log(`websocket data: ${data}`);
         return next
             .handle();

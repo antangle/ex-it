@@ -50,19 +50,24 @@ export class UserRepository extends Repository<User> {
         if(typeof param === 'string') query = query.where('user.email = :email', {email: param})
         else if(typeof param === 'number') query = query.where('user.id = :userId', {userId: param})
 
-        return await query.getRawOne();
+        return await query.andWhere('user.deleted_at IS NULL')
+            .getRawOne();
     }
 
     async getReviewCount(param: string | number): Promise<any[]>{
         let query = this.createQueryBuilder('user')
             .select('user.nickname AS nickname')
             .addSelect('review.reviewMapperId, COUNT(review.reviewMapperId) AS count')
+            
             .leftJoin('user.review', 'review')
             .groupBy('user.nickname, review.reviewMapperId')
 
         if(typeof param === 'string') query = query.where('user.email = :email', {email: param})
         else if(typeof param === 'number') query = query.where('user.id = :userId', {userId: param})
-        return await query.getRawMany();
+        
+        return await query
+            .andWhere('user.deleted_at IS NULL')
+            .getRawMany();
     }
     
 

@@ -30,55 +30,66 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
 
     //for logging
     let code = req.endpoint;
-    let data;
+    let data: any;
+    let msg: string;
+
+    if(exception instanceof CustomError){
+      this.logger.warn(`errorCode: ${code}${exception.code}`)
+      this.logger.warn(exception);
+      if(exception.message) msg = exception.message;
+    }
     
     //for api response
     let apiResponse: ApiResult;
     switch(exception.constructor){
       case UnauthorizedUserException:
-        apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, consts.UNAUTHORIZED_USER)
+        if(!msg) msg = consts.UNAUTHORIZED_USER;
+        apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, msg)
         break;
       case OauthHttpException:
-        apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, consts.UNAUTHORIZED_USER)
+        if(!msg) msg = consts.UNAUTHORIZED_USER;
+        apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, msg)
         break;
       case BadRequestCustomException:
-        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, null, consts.BAD_REQUEST)
+        if(!msg) msg = consts.BAD_REQUEST;
+        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, null, msg)
         break;
       case BadRequestException:
-        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, null, consts.BAD_REQUEST)
+        if(!msg) msg = consts.BAD_REQUEST;
+        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, null, msg)
         break;
       case NotExistsException:
-        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, null, consts.TARGET_NOT_EXIST)
+        if(!msg) msg = consts.TARGET_NOT_EXIST;
+        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, null, msg)
         break;
       case NoNicknameAvailableException:
-        apiResponse = makeApiResponse(HttpStatus.GATEWAY_TIMEOUT, null, consts.TOO_MANY_TRIES)
+        if(!msg) msg = consts.TOO_MANY_TRIES;
+        apiResponse = makeApiResponse(HttpStatus.GATEWAY_TIMEOUT, null, msg)
         break;
       case DatabaseException:
-        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.DATABASE_ERROR)
+        if(!msg) msg = consts.DATABASE_ERROR;
+        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, msg)
         break;
       case UserExistsException:
-        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, data, consts.DUPLICATE_ACCOUNT_ERROR)
+        if(!msg) msg = consts.DUPLICATE_ACCOUNT_ERROR;
+        apiResponse = makeApiResponse(HttpStatus.BAD_REQUEST, data, msg)
         break;
       case NotFoundException:
-        apiResponse = makeApiResponse(HttpStatus.NOT_FOUND, null, consts.NOT_FOUND)
+        if(!msg) msg = consts.NOT_FOUND;
+        apiResponse = makeApiResponse(HttpStatus.NOT_FOUND, null, msg)
         break;
       case TooManyRequestException:
-        apiResponse = makeApiResponse(HttpStatus.TOO_MANY_REQUESTS, null, consts.TOO_MANY_REQUESTS)
+        if(!msg) msg = consts.TOO_MANY_REQUESTS;
+        apiResponse = makeApiResponse(HttpStatus.TOO_MANY_REQUESTS, null, msg)
         break;
       case UnhandledException:
-        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
-        break;
-      case UnhandledException:
-        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
+        if(!msg) msg = consts.SERVER_ERROR;
+        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, msg)
         break;
       default:
-        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, consts.SERVER_ERROR)
+        if(!msg) msg = consts.SERVER_ERROR;
+        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, msg)
         break;
-    }
-
-    if(exception instanceof CustomError){
-      this.logger.warn(`errorCode: ${code}${exception.code}`)
-      this.logger.warn(exception.data);
     }
 
     //client request error

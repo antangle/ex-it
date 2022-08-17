@@ -61,6 +61,7 @@ export const consts = {
     TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
     WS_VALIDATION_EXCEPTION: 'websocket validation error',
     WS_NOT_JSON_EXCEPTION: 'data is not in json format',
+    NEW_PW_NOT_MATCH: 'new password not match',
     //Error codes
     SIGNIN_ERROR_CODE: 1,
     LOCAL_STRATEGY_ERROR_CODE: 2,

@@ -1,3 +1,4 @@
+import { CheckEmailDto } from './dto/check-email.dto';
 import { TooManyRequestException } from './../../exception/bad-request.exception';
 import { RedisService } from './../redis/redis.service';
 import { VerifyDto, VerifyRequestDto } from './dto/verify.dto';
@@ -83,7 +84,6 @@ export class AuthController {
                 await this.authService.updateOAuthRefreshToken(user.email, user.type, updateAuthDto, queryRunner);
             }
 
-
             await queryRunner.commitTransaction();
             return makeApiResponse(HttpStatus.OK);
         } catch(err){
@@ -134,7 +134,6 @@ export class AuthController {
         }
     }
 
-
     @ApiOperation({
         summary: 'change password',
         description: 'you can only change passwords with local-login',
@@ -151,7 +150,7 @@ export class AuthController {
         @Body() changePwDto: ChangePwDto
     ){
         if(user.type != consts.LOCAL) throw new BadRequestCustomException(consts.OAUTH_CANT_CHANGE_PW, consts.CHANGE_PW_ERROR_CODE);
-        else if(changePwDto.old_pw != changePwDto.old_pw_re) throw new BadRequestCustomException(consts.PASSWORD_NOT_MATCH, consts.PASSWORD_NOT_MATCH_CODE);
+        else if(changePwDto.new_pw != changePwDto.new_pw_re) throw new BadRequestCustomException(consts.NEW_PW_NOT_MATCH, consts.PASSWORD_NOT_MATCH_CODE);
 
         const {old_pw, new_pw} = changePwDto;
         const email = user.email;
@@ -167,20 +166,18 @@ export class AuthController {
     }
 
     @ApiOperation({
-        summary: 'check if email exists',
-        description: 'true if email is available. false otherwise',
+        summary: '이메일 존재 유무 체크',
+        description: '이메일이 사용 가능하면 true. 이메일이 이미 존재하면 false.',
     })
     @ApiResponses(CheckEmailResponse)
     //check email exists
     @SetCode(106)
-    @ApiQuery({
-        name: 'email',
-        required: true,
-        description: '확인할 이메일'
+    @ApiBody({
+        type: CheckEmailDto
     })
     @Post('email_check')
-    async checkEmail(@Body('email') email: string){
-        const available = await this.userService.checkEmailExists(email);
+    async checkEmail(@Body() checkEmailDto: CheckEmailDto){
+        const available = await this.userService.checkEmailExists(checkEmailDto.email);
         const payload = {
             available: available
         }
@@ -301,9 +298,22 @@ export class AuthController {
     async quit(
         @AuthUser() user: AuthorizedUser,
     ){
-        const userId = user.id;
-        await this.userService.softDelete(userId);
-        return makeApiResponse(HttpStatus.OK);
+        const queryRunner = this.connection.createQueryRunner();
+        try{
+            await queryRunner.connect();
+            await queryRunner.startTransaction();
+
+            const userId = user.id;
+            await this.authService.quit(userId, queryRunner);
+            await queryRunner.commitTransaction();
+
+            return makeApiResponse(HttpStatus.OK);
+        } catch(err){
+            await queryRunner.rollbackTransaction();
+            throw err;
+        } finally{
+            await queryRunner.release();
+        }
     }
 
 

@@ -1,8 +1,8 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn, ManyToOne, Index } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn, ManyToOne, Index, DeleteDateColumn } from 'typeorm';
 import { User } from './user.entity';
 
 @Entity({name: 'auth'})
-@Index(["email", "type"], { unique: true })
+@Index(["email", "type"], { unique: true , where: 'deleted_at IS NULL'})
 export class Auth {
     @PrimaryGeneratedColumn()
     id?: number;
@@ -23,4 +23,10 @@ export class Auth {
         nullable: true,
     })
     oauth_refresh_token?: string;
+
+    @CreateDateColumn()
+    created_at?: Date;
+
+    @DeleteDateColumn()
+    deleted_at?: Date;
 }

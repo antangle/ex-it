@@ -49,7 +49,7 @@ export class RoomRepository extends Repository<Room> {
         searchRoomDto: SearchRoomDto
     ){
         
-        const {tag_id, title, take, page} = searchRoomDto;
+        const {tag, title, take, page} = searchRoomDto;
         const status = 'guest';
         let query = await this.createQueryBuilder('room')
             .distinct(true) 
@@ -92,12 +92,12 @@ export class RoomRepository extends Repository<Room> {
                     .groupBy('room_join.roomId')
                 }, 'guest', 'guest.roomId = room.id')
             .setParameter('status', status)
-                
+            .innerJoin('room_tag.tag', 'tag')
 
-        if(tag_id != 0){
+        if(tag != ''){
             query = query
-                .andWhere('room_tag.tagId = :tagId')
-                .setParameter('tagId', tag_id);
+                .andWhere('tag.name = :tag')
+                .setParameter('tag', tag);
         }
         
         query = query
