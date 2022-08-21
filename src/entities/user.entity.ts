@@ -3,17 +3,12 @@ import { RoomJoin } from './roomJoin.entity';
 import { Inquiry } from './inquiry.entity';
 import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, JoinColumn, OneToOne, OneToMany, Index, DeleteDateColumn } from 'typeorm';
 import { Auth } from './auth.entity';
-import { Setting } from './setting.entity';
 import { Ban } from './ban.entity';
 
 @Entity({name: 'user'})
 export class User {
     @PrimaryGeneratedColumn()
     id?: number;
-
-    @OneToOne(() => Setting, (setting) => setting.user)
-    @JoinColumn()
-    setting?: Setting;
     
     @OneToMany(() => Auth, auth => auth.user)
     auth?: Auth[];

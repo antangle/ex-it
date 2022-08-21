@@ -1,3 +1,4 @@
+import { FcmService } from './../../fcm/fcm.service';
 import { BadRequestCustomException } from './../../exception/bad-request.exception';
 import { RedisService } from './../redis/redis.service';
 import { CreateAuthDto } from './../auth/dto/create-auth.dto';
@@ -17,7 +18,24 @@ export class TestController {
     private readonly utilService: UtilService,
     private readonly authService: AuthService,
     private readonly connection: Connection,
+    private readonly fcmService: FcmService
     ) {}
+
+  @Post('fcm')
+  @SetCode(900)
+  async sendPushMessage(@Body('fcm_token') fcmToken: string){
+    const payload = {
+      notification: {
+        title: '테스트222222',
+        body: '테스트바디이222222222222'
+      },
+      data: {
+        haahahah: '되나?'
+      }
+    }
+    this.fcmService.initFcmApp();
+    return await this.fcmService.sendFcmMessage(fcmToken, payload);
+  }
 
   @Get('call')
   @SetCode(900)

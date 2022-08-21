@@ -1,3 +1,4 @@
+import { FcmModule } from './../../fcm/fcm.module';
 import { AuthRepository } from 'src/module/auth/auth.repository';
 import { UserRepository } from 'src/module/user/user.repository';
 import { SetEndpoint } from 'src/guard/endpoint.guard';
@@ -16,6 +17,7 @@ import { TestController } from './test.controller';
     AuthModule,
     RedisModule,
     UtilModule,
+    FcmModule
   ],
   controllers: [TestController],
   providers: [

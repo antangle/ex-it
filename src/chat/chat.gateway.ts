@@ -1,3 +1,4 @@
+import { fcmDto } from './dto/fcm.dto';
 import { LeaveDto, LeavedDto } from './dto/leave.dto';
 import { PeerJoinDto, PeerConnectedDto } from './dto/peer-join.dto';
 import { SocketValidationPipe } from './../validation/websocket.validation';
@@ -66,7 +67,7 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
     },
   })
   @SubscribeMessage('peer-join')
-  async handleEvent(
+  async sendPeerId(
       @ConnectedSocket() socket: Socket, 
       @MessageBody(new SocketValidationPipe()) data: PeerJoinDto,
   ) {

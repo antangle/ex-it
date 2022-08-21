@@ -8,8 +8,6 @@ import { UpdateRoomDto } from './dto/update-room.dto';
 import { UpdateRoomJoinDto } from './dto/room-join-update.dto';
 import { RoomEndDto } from './dto/room-end.dto';
 import { SearchRoomDto } from './dto/search-room.dto';
-import { UserService } from './../user/user.service';
-import { User } from './../../entities/user.entity';
 import { RoomTag } from './../../entities/roomTag.entity';
 import { QueryRunner } from 'typeorm';
 import { CreateRoomDto } from './dto/create-room.dto';
@@ -28,7 +26,6 @@ import { UserInfoResponse } from './response/user-info.response';
 import { GetEndRoomResponse } from './response/end.response';
 import { consts } from 'src/consts/consts';
 import { OccupiedResponse } from './response/occupied.response';
-import { OccupiedAcceptedResponse } from './response/occupied-accepted.response';
 
 @ApiTags('room')
 @Controller('room')

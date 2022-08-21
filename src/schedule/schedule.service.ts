@@ -1,8 +1,6 @@
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { User } from 'src/entities/user.entity';
 import { AuthRepository } from 'src/module/auth/auth.repository';
 import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Cron } from '@nestjs/schedule';
 import { UserRepository } from 'src/module/user/user.repository';
 import { Connection } from 'typeorm';
 
@@ -16,7 +14,7 @@ export class TasksService {
     @Inject(WINSTON_MODULE_NEST_PROVIDER)
     private logger: Logger
   ){}
-  @Cron('0 4 * * *')
+  /* @Cron('0 4 * * *')
   async handleCron() {
     const queryRunner = this.connection.createQueryRunner();
     try{
@@ -39,5 +37,5 @@ export class TasksService {
     } finally{
         await queryRunner.release();
     }
-  }
+  } */
 }

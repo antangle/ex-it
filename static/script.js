@@ -53,10 +53,10 @@ const initStream = async () => {
     });
     
     //if new user connects to socket with roomname, new user's peerId is given. call other peers with that id with mediaStream
-    socket.on('user-connected', (data) => {
+    socket.on('peer-connected', (data) => {
         const destPeerId = data.peerId;
         const destNickname = data.nickname;
-        console.log(`user-connected! : ${destNickname}`, destPeerId);
+        console.log(`peer-connected! : ${destNickname}`, destPeerId);
         const video = document.createElement('video');
         
         //if new user connects, call that user with peerjs with userId.

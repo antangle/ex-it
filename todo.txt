@@ -40,4 +40,4 @@ guest -> speaker                    v
 observer -> guest                   v
 
 soft delete 오류 해결               v
-firebase 푸시
+firebase 푸시                       ..
