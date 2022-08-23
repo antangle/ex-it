@@ -30,6 +30,7 @@ services:
     environment:
       - DEVMODE=prod
     volumes:
+      - ./logs:/app/logs
       - /app/node_modules
 
   redis:

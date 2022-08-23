@@ -23,9 +23,9 @@ if (window.chrome) {
 
 //prevent race condition of getUserMedia and peerjs with async-await
 const initStream = async () => {
-    let mediaStream 
+    let mediaStream;
     
-    try { 
+    try {
         mediaStream = await navigator.mediaDevices
             .getUserMedia({
             audioConstraints: audioConstraints,
