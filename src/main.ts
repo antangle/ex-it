@@ -39,7 +39,9 @@ async function bootstrap() {
   )
 
   //ejs configuration
-  app.useStaticAssets(path.join(__dirname, '..', '/static'));
+  app.useStaticAssets(path.join(__dirname, '..', '/static'), {
+    prefix: '/public/',
+  });
   app.setBaseViewsDir(path.join(__dirname, '..', '/views'))
   app.setViewEngine("ejs");
   

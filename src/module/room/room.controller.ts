@@ -81,7 +81,7 @@ export class RoomController {
       await queryRunner.connect();
       await queryRunner.startTransaction();
       const roomname = randomUUID();
-      
+
       // get user info
       const createUser = {id: user.id}
       createRoomDto.create_user = createUser;
@@ -104,9 +104,11 @@ export class RoomController {
       const customTagId = await this.roomService.checkCustomTags(parsedCustomTags, queryRunner);
 
       // concat with tags
-      customTagId.map(x => {
-        tags.push(x.id)
-      })
+      if(customTagId){
+        customTagId.map(x => {
+          tags.push(x.id)
+        })
+      }
 
       //remove overlapping tag ids
       const tagSet = new Set(tags);
@@ -168,21 +170,19 @@ export class RoomController {
     const queryRunner: QueryRunner = this.connection.createQueryRunner();
     const roomId = userInfoDto.room_id;
     //status: host | speaker
-    const status = userInfoDto.status;
-    try{
+    try{ 
       await queryRunner.connect();
       await queryRunner.startTransaction();
 
-      const nicknames = await this.roomService.getHostAndSpeakerNicknames(roomId);
-      const hostNickname = nicknames[0].nickname;
-      let speakerNickname = null;
-      if(nicknames.length > 1) speakerNickname = nicknames[1].nickname;
-      const targetUserId = await this.roomService.getUserIdFromStatus(roomId, status, queryRunner);
-      const result = await this.roomService.getUserInfo(targetUserId, queryRunner);
-      
+      const hostAndSpeaker = await this.roomService.getHostAndSpeaker(roomId);
+      const hostUserId = hostAndSpeaker[0].id;
+      let speakerUserId = null;
+      if(hostAndSpeaker.length > 1) speakerUserId = hostAndSpeaker[1].id;
+      const host = await this.roomService.getUserInfo(hostUserId, queryRunner);
+      const speaker = await this.roomService.getUserInfo(speakerUserId, queryRunner);
       await queryRunner.commitTransaction();
 
-      return makeApiResponse(HttpStatus.OK, {hostNickname, speakerNickname, ...result, tokens});
+      return makeApiResponse(HttpStatus.OK, {host, speaker, tokens});
     } catch(err){
       await queryRunner.rollbackTransaction();
       throw err;

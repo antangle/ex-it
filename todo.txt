@@ -41,3 +41,16 @@ observer -> guest                   v
 
 soft delete 오류 해결               v
 firebase 푸시                       v
+database 자동 백업 1일 1회          v
+
+08/27/2022 bugfix
+재가입 요청시 nickname null 현상    v
+room create 시 custom_tag 빈배열 에러 현상 v
+
+room/user_info api 수정             v
+firebase 푸시 api 작성              v
+
+08/29 ~
+redis cache로 roomname의 peerId 저장
+firebase fcm exit 이미지 넣기       v
+database utc 시간 변환 문제 해결   

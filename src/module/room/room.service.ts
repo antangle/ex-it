@@ -245,7 +245,7 @@ export class RoomService {
         }
     }
 
-    async getHostAndSpeakerNicknames(roomId: number, queryRunner?: QueryRunner): Promise<any[]>{
+    async getHostAndSpeaker(roomId: number, queryRunner?: QueryRunner): Promise<any[]>{
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
             const roomjoins = await roomJoinRepository.getHostAndSpeaker(roomId);
@@ -255,7 +255,7 @@ export class RoomService {
         } catch(err){
             if(err instanceof NotExistsException) throw err;
             else if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.GET_HOST_AND_SPEAKER_ERROR_CODE, err);
-            else throw new UnhandledException(this.getHostAndSpeakerNicknames.name, consts.GET_HOST_AND_SPEAKER_ERROR_CODE, err);
+            else throw new UnhandledException(this.getHostAndSpeaker.name, consts.GET_HOST_AND_SPEAKER_ERROR_CODE, err);
         }
     }
 
@@ -291,15 +291,14 @@ export class RoomService {
         const userRepository = queryRunner ? queryRunner.manager.getCustomRepository(UserRepository) : this.userRepository;
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
-
             const userInfo = await userRepository.getProfileQuery(userId);
             const tags = await roomJoinRepository.getMostUsedTags(userId);
             const reviews = await userRepository.getReviewCount(userId);
             const parsedReviews = await this.utilService.parseReview(reviews);
             return {
-                userInfo: userInfo[0],
+                userInfo: userInfo,
                 usedTags: this.parseTags(tags),
-                reviews: parsedReviews
+                reviews: parsedReviews,
             }
         } catch(err){
             if(err instanceof DatabaseException) throw err;

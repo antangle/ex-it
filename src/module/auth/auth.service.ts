@@ -66,7 +66,7 @@ export class AuthService {
                 nickname = this.utilService.makeRandomNickname();
                 count--;
             }
-            if(count == 0){
+            if(count <= 0){
                 throw new NoNicknameAvailableException(consts.TOO_MANY_TRIES, consts.GET_RANDOM_NICKNAME_ERROR_CODE);
             }
             return nickname;

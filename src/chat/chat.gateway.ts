@@ -1,10 +1,10 @@
-import { fcmDto } from './dto/fcm.dto';
+import { RedisService } from './../module/redis/redis.service';
 import { LeaveDto, LeavedDto } from './dto/leave.dto';
 import { PeerJoinDto, PeerConnectedDto } from './dto/peer-join.dto';
 import { SocketValidationPipe } from './../validation/websocket.validation';
 import { WebsocketLoggingInterceptor } from './../interceptor/websocket.interceptor';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { Inject, LoggerService, UseInterceptors, HttpStatus } from '@nestjs/common';
+import { Inject, LoggerService, UseInterceptors, HttpStatus, Logger } from '@nestjs/common';
 import { JoinedDto } from './dto/joined.dto';
 import { JoinDto } from './dto/join.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -29,9 +29,10 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
   constructor(
     private readonly chatService: ChatService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER)
-    private readonly logger: LoggerService,
+    private readonly logger: Logger,
+    private readonly redisService: RedisService,
 
-    ) {}
+  ) {}
   
   @WebSocketServer() server: Server;
 
@@ -72,13 +73,14 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
       @MessageBody(new SocketValidationPipe()) data: PeerJoinDto,
   ) {
     await socket.join(data.roomname);
+    await this.redisService.setRoomPeerCache(data.roomname, data.peerId);
     const payload: PeerConnectedDto = {
       peerId: data.peerId,
       nickname: data.nickname
     }
     socket.to(data.roomname).emit('peer-connected', payload);
   } 
-  
+
   @AsyncApiSub({
     channel: 'join',
     summary: 'roomname에 해당하는 방에 접속한다.',
@@ -176,10 +178,10 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
       @MessageBody(new SocketValidationPipe()) data: LeaveDto
   ) {
     await socket.leave(data.roomname);
+    await this.redisService.removeRoomPeerCache(data.roomname, data.peerId)
     const payload: LeavedDto = {
       nickname: data.nickname
     }
     socket.to(data.roomname).emit('leaved', payload);
   }
-
 }

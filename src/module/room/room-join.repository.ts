@@ -38,7 +38,7 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
     async getHostAndSpeaker(roomId: number): Promise<any[]>{
         const status = ['host', 'speaker'];
         return await this.createQueryBuilder('room_join')
-            .select('user.nickname AS nickname')
+            .select('user.id AS id')
             .where('room_join.roomId = :roomId', {roomId: roomId})            
             .andWhere('room_join.status IN (:...status)')
             .setParameter('status', status)

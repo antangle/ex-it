@@ -40,7 +40,7 @@ export class Room {
   @Column()
   hardcore?: boolean;
 
-  @CreateDateColumn()
+  @CreateDateColumn({type: 'timestamptz'})
   created_at?: Date;
 
   @Column()
@@ -58,6 +58,7 @@ export class Room {
   //checks if this room is occupied
   @Column({
     nullable: true,
+    type: 'timestamptz'
   })
   is_occupied?: Date = null;
 }

@@ -15,7 +15,7 @@ export class AppController {
     return 'healthy';
   }
 
-  @Get('favicon.ico')
+  @Get('/favicon.ico')
   favicon(@Response() res): void {
     res.status(204);
     res.end();

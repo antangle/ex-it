@@ -93,7 +93,7 @@ export class RoomRepository extends Repository<Room> {
                 }, 'guest', 'guest.roomId = room.id')
             .setParameter('status', status)
             .innerJoin('room_tag.tag', 'tag')
-
+            .orderBy('room.created_at', 'DESC')
         if(tag != ''){
             query = query
                 .andWhere('tag.name = :tag')

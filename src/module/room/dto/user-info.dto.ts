@@ -16,11 +16,11 @@ export class UserInfoDto {
     @IsNumber()
     room_id?: number;
 
-    @ApiProperty({
+/*     @ApiProperty({
         default: 'host',
         description: 'host | speaker'
     })
     @IsEnum(Status)
     @IsOptional()
-    status?: string = 'host';
+    status?: string = 'host'; */
 }

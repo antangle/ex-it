@@ -6,10 +6,17 @@ export const consts = {
     LOCAL: 'local',
     SPEAKER: 'speaker',
     GUEST: 'guest',
+
+    //peer
+    ROOM_CACHE_TTL: 3600*24,
+
+    //FCM
+
     //sens
     SENS_DEFAULT: '[ex-it!]',
     SMS: 'SMS',
     FROM_PHONE_NUMBER: '01090204201',
+    PHONE_VERIFY_TTL: 180,
 
     //for testing purposes
     LOCAL_URL: 'https://ex-it.app/health',
@@ -62,6 +69,7 @@ export const consts = {
     WS_VALIDATION_EXCEPTION: 'websocket validation error',
     WS_NOT_JSON_EXCEPTION: 'data is not in json format',
     NEW_PW_NOT_MATCH: 'new password not match',
+    SEND_FCM_MESSAGE_ERR_MSG: 'fcm error',
     //Error codes
     SIGNIN_ERROR_CODE: 1,
     LOCAL_STRATEGY_ERROR_CODE: 2,
@@ -112,4 +120,5 @@ export const consts = {
     GET_REVIEW_MAPPER_ERR_CODE: 47,
     GET_HOST_AND_SPEAKER_ERROR_CODE: 48,
     VALIDATION_ERROR_CODE: 49,
+    SEND_FCM_MESSAGE_ERR_CODE: 50,
 }

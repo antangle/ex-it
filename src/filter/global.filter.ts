@@ -1,21 +1,19 @@
+import { FirebaseException } from './../exception/firebase.exception';
 import { ApiResult } from './../types/user.d';
 import { TooManyRequestException } from './../exception/bad-request.exception';
 import { NoNicknameAvailableException } from './../exception/no-nickname.exception';
 import { NotExistsException } from '../exception/not-exist.exception';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { UnauthorizedUserException } from './../exception/unauthorized.exception';
-import { QueryFailedError } from 'typeorm';
-import { JwtAuthException } from './../exception/jwt.exception';
 import { UnhandledException } from './../exception/unhandled.exception';
 import { DatabaseException, UserExistsException } from './../exception/database.exception';
 import { CustomError } from './../exception/custom.exception';
 import { OauthHttpException } from './../exception/axios.exception';
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, BadRequestException, NotFoundException, Inject, LoggerService } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, BadRequestException, NotFoundException, LoggerService } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { BaseExceptionFilter, Reflector } from '@nestjs/core';
 import { generateCode, makeApiResponse } from 'src/functions/util.functions';
 import { consts } from 'src/consts/consts';
-import { WinstonLogger, WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Catch()
 export class GlobalExceptionFilter extends BaseExceptionFilter {
@@ -35,8 +33,14 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
 
     if(exception instanceof CustomError){
       this.logger.warn(`errorCode: ${code}${exception.code}`)
-      this.logger.warn(exception);
+      this.logger.warn(JSON.stringify(exception));
       if(exception.message) msg = exception.message;
+    }
+    else if(exception instanceof BadRequestException){
+      this.logger.warn(`${JSON.stringify(exception.getResponse())}`);
+    }
+    else{
+      this.logger.warn(`${exception.stack}`);
     }
     
     //for api response
@@ -86,6 +90,10 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
         if(!msg) msg = consts.SERVER_ERROR;
         apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, msg)
         break;
+      case FirebaseException:
+        if(!msg) msg = consts.SEND_FCM_MESSAGE_ERR_MSG;
+        apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, msg)
+        break;
       default:
         if(!msg) msg = consts.SERVER_ERROR;
         apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, msg)
@@ -97,17 +105,14 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
   
       //log request
       const { method, url, body } = req;
-      this.logger.warn(`req: ${method} | ${url} | body: ${JSON.stringify(body)}`)
-  
-      //log response
-      this.logger.warn(`res: ${JSON.stringify(apiResponse)}`);
+      this.logger.warn(`req: ${method} | ${url} \nbody: ${JSON.stringify(body)}\nres: ${JSON.stringify(apiResponse)}`)
     } 
     //server error
     else{
   
       //log request
       const { method, url, body } = req;
-      this.logger.error(`req: ${method} | ${url} | body: ${JSON.stringify(body)}`)
+      this.logger.error(`req: ${method} | ${url} | \nbody: ${JSON.stringify(body)}\nres: ${JSON.stringify(apiResponse)}`)
   
       //log response
       this.logger.error(`res: ${JSON.stringify(apiResponse)}`);

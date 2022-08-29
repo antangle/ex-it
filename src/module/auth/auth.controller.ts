@@ -207,7 +207,6 @@ export class AuthController {
             createUserDto.password = await this.utilService.hashPassword(createUserDto.password);
 
             const user = await this.userService.createUser(createUserDto, queryRunner);
-            console.log(user);
             const tokens = await this.authService.signIn(user, consts.LOCAL, queryRunner);
 
             await queryRunner.commitTransaction();
@@ -243,28 +242,29 @@ export class AuthController {
         } = oAuthSignInDto;
 
         const queryRunner = this.connection.createQueryRunner();
-        
+
         try{
             await queryRunner.connect();
             await queryRunner.startTransaction();
             
             //check authentication with access token
             //const isValid = await this.authService.validateOAuthAccessToken(oauth_access_token, type)
-            const createUserDto: CreateUserDto = {
-                nickname: await this.authService.getRandomNickname(),
-                email: email,
-                terms: terms,
-                personal_info_terms: personal_info_terms,
-                is_authenticated: true //isValid
-            };
-
 
             //if authenticated, check user exists.
             let user = await this.userService.findOneByEmailReturnNull(email, queryRunner);
             
             //if user does not exist, create that user.
-            if(!user) user = await this.userService.createUser(createUserDto, queryRunner);
-            
+            if(!user) {
+                const createUserDto: CreateUserDto = {
+                    nickname: await this.authService.getRandomNickname(),
+                    email: email,
+                    terms: terms,
+                    personal_info_terms: personal_info_terms,
+                    is_authenticated: true //isValid
+                };
+                user = await this.userService.createUser(createUserDto, queryRunner);
+            }
+            const nickname = user.nickname;
             //if user with that email already exists, just link
             const authCreateDto: Auth = {
                 user: user,
@@ -278,7 +278,7 @@ export class AuthController {
             user.auth = [auth];
             const tokens = await this.authService.signIn(user, type, queryRunner);
             await queryRunner.commitTransaction();
-            return makeApiResponse(HttpStatus.OK, {tokens, username: user.nickname});
+            return makeApiResponse(HttpStatus.OK, {tokens, nickname: nickname});
         } catch(err){
             await queryRunner.rollbackTransaction();
             throw(err);
@@ -335,7 +335,7 @@ export class AuthController {
         const randomNumber = this.utilService.make4RandomDigit();
 
         //if sms already sent, send Too Many Request Exception
-        const isCacheExist = await this.redisService.get(verifyRequestDto.phone);
+        const isCacheExist = await this.redisService.getPhoneVerificationCache(verifyRequestDto.phone);
         if(isCacheExist) throw new TooManyRequestException(consts.TOO_MANY_REQUESTS, consts.VERIFY_REQUEST_ERR_CODE)
 
         // send sms message with verification number
@@ -347,7 +347,7 @@ export class AuthController {
             time: Date.now()
         }
 
-        await this.redisService.set(verifyRequestDto.phone, verifyCache);
+        await this.redisService.setPhoneVerificationCache(verifyRequestDto.phone, verifyCache);
 
         return makeApiResponse(HttpStatus.OK);
     }
@@ -371,7 +371,7 @@ export class AuthController {
 
         
         //10초 후까지 재인증 막아놓기
-        const isCacheExist = await this.redisService.get(verifyRequestDto.phone);
+        const isCacheExist = await this.redisService.getPhoneVerificationCache(verifyRequestDto.phone);
         if(isCacheExist){
             const seconds = (Date.now() - isCacheExist.time)/1000;
             if(seconds < 10) throw new TooManyRequestException(consts.TOO_MANY_REQUESTS, consts.VERIFY_REQUEST_ERR_CODE);
@@ -386,7 +386,7 @@ export class AuthController {
             time: Date.now()
         }
 
-        await this.redisService.set(verifyRequestDto.phone, verifyCache);
+        await this.redisService.setPhoneVerificationCache(verifyRequestDto.phone, verifyCache);
 
         return makeApiResponse(HttpStatus.OK);
     }
@@ -402,8 +402,7 @@ export class AuthController {
     @SetCode(110)
     @Post('verify')
     async verifyPhoneNumber(@Body() verifyDto: VerifyDto){
-        const verifyCache = await this.redisService.get(verifyDto.phone);
-        console.log(verifyCache);
+        const verifyCache = await this.redisService.getPhoneVerificationCache(verifyDto.phone);
         let isVerified: boolean;
         if(verifyCache == null) isVerified = false;
         else isVerified = verifyCache.verifyNumber == verifyDto.verify_number;

@@ -1,5 +1,4 @@
-import { RedisModule } from './../redis/redis.module';
-import { LocalAuthGuard } from '../../guard/localAuth.guard';
+import { MyRedisModule } from './../redis/redis.module';
 import { UtilModule } from '../util/util.module';
 import { AuthRepository } from './auth.repository';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -12,8 +11,6 @@ import { AuthController } from './auth.controller';
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategy/jwt.stategy';
-import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from '../../guard/jwtAuth.guard';
 import { UserRepository } from '../user/user.repository';
 
 @Module({
@@ -22,7 +19,7 @@ import { UserRepository } from '../user/user.repository';
     UserModule,
     PassportModule,
     UtilModule,
-    RedisModule,
+    MyRedisModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

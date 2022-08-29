@@ -3,13 +3,12 @@ import { UtilService } from '../module/util/util.service';
 import { consts } from 'src/consts/consts';
 import { AuthService } from '../module/auth/auth.service';
 import { JwtService } from '@nestjs/jwt';
-import { ExecutionContext, HttpException, HttpStatus, Inject, Injectable, NotFoundException, LoggerService } from '@nestjs/common';
+import { ExecutionContext, Inject, Injectable, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { UnauthorizedUserException } from 'src/exception/unauthorized.exception';
 import { TokenData } from 'src/response/response.dto';
-import { loggers } from 'winston';
 
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
@@ -17,7 +16,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         private jwtService: JwtService,
         private authService: AuthService,
         private utilService: UtilService,
-        @Inject(WINSTON_MODULE_NEST_PROVIDER) private logger: LoggerService
+        @Inject(WINSTON_MODULE_NEST_PROVIDER) private logger: Logger
     ) {
         super();
     }
@@ -65,7 +64,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         //set user, tokens
         request.user = this.utilService.makePayload(decoded, decoded.type);
         request.tokens = tokens;
-        this.logger.log(`current user: ${JSON.stringify(request.user)}`);
+        this.logger.verbose(`current user: ${JSON.stringify(request.user)}`);
         return true;
     }
 

@@ -1,4 +1,4 @@
-import { FcmService } from './../../fcm/fcm.service';
+import { FcmService } from './../fcm/fcm.service';
 import { BadRequestCustomException } from './../../exception/bad-request.exception';
 import { RedisService } from './../redis/redis.service';
 import { CreateAuthDto } from './../auth/dto/create-auth.dto';
@@ -26,14 +26,10 @@ export class TestController {
   async sendPushMessage(@Body('fcm_token') fcmToken: string){
     const payload = {
       notification: {
-        title: '테스트222222',
-        body: '테스트바디이222222222222'
-      },
-      data: {
-        haahahah: '되나?'
+        title: '타이틀!!',
+        body: '메세지!!!??'
       }
     }
-    this.fcmService.initFcmApp();
     return await this.fcmService.sendFcmMessage(fcmToken, payload);
   }
 
@@ -46,18 +42,18 @@ export class TestController {
   @Post('redis')
   @SetCode(900)
   async redisGet(@Body('key') key: string, @Body('val') val: number){
-    const res = await this.redisService.get(key);
+    const res = await this.redisService.getRoomPeerCache('asd');
     console.log(res);
     return res;
   }
 
-  @Post('set')
+ /*  @Post('set')
   @SetCode(900)
   async redisSet(@Body('key') key: string, @Body('val') val: number){
     throw new BadRequestCustomException('hi', 10101, {data: 'hi'});
     await this.redisService.set(key, val)
     return makeApiResponse(200, {test: true});
-  }
+  } */
 
   @Post('message')
   @SetCode(900)

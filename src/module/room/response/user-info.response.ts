@@ -19,25 +19,16 @@ export abstract class ReviewForm {
     count: number;
 }
 
-abstract class UserInfoResponseData {
-
+abstract class UserInfoForm {
     @ApiProperty({
-        description: '호스트 닉네임'
+        description: '유저 nickname과 전체 통화시간을 담은 정보'
     })
-    hostNickname: string;
-
-    @ApiProperty({
-        description: '스피커 닉네임'
-    })
-    speakerNickname: string;
-
-    @ApiProperty()
     userInfo: SettingResponseData;
 
     @ApiProperty({
         isArray: true,
         default: ['가정', '개인'],
-        description: '사용자가 가장 많이 사용한 태그들. 최대 3개'
+        description: 'string 배열. 사용자가 가장 많이 사용한 태그들. 최대 3개'
     })
     usedTags: string;
 
@@ -54,6 +45,15 @@ abstract class UserInfoResponseData {
         }]
     })
     reviews: ReviewForm;
+}
+
+abstract class UserInfoResponseData {
+    
+    @ApiProperty()
+    host: UserInfoForm;
+
+    @ApiProperty()
+    speaker: UserInfoForm;
 }
 
 export abstract class UserInfoResponse extends BaseOKResponseWithTokens{

@@ -1,4 +1,4 @@
-import { IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 
 export class LeaveDto {
     @IsString()
@@ -6,6 +6,10 @@ export class LeaveDto {
 
     @IsString()
     nickname: string;
+
+    @IsOptional()
+    @IsString()
+    peerId: string;
 }
 
 export class LeavedDto {

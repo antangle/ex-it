@@ -24,9 +24,9 @@ export class Auth {
     })
     oauth_refresh_token?: string;
 
-    @CreateDateColumn()
+    @CreateDateColumn({type: 'timestamptz'})
     created_at?: Date;
 
-    @DeleteDateColumn()
+    @DeleteDateColumn({type: 'timestamptz'})
     deleted_at?: Date;
 }

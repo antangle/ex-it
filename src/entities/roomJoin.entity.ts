@@ -33,6 +33,6 @@ export class RoomJoin {
     })
     call_time?: number;
 
-    @CreateDateColumn()
+    @CreateDateColumn({type: 'timestamptz'})
     created_at?: Date;
 }
