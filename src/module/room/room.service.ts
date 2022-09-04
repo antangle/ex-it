@@ -172,6 +172,7 @@ export class RoomService {
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
             const rooms = await roomRepository.searchRoomsPaged(userId, searchRoomDto);
+            if(rooms.length == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_ALL_ROOMS_ERROR_CODE);
             return rooms;
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.GET_ALL_ROOMS_ERROR_CODE, err);
@@ -249,7 +250,7 @@ export class RoomService {
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
             const roomjoins = await roomJoinRepository.getHostAndSpeaker(roomId);
-            if(!roomjoins) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_HOST_AND_SPEAKER_ERROR_CODE);
+            if(roomjoins.length == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_HOST_AND_SPEAKER_ERROR_CODE);
 
             return roomjoins;
         } catch(err){
@@ -292,6 +293,8 @@ export class RoomService {
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
             const userInfo = await userRepository.getProfileQuery(userId);
+            if(!userInfo) return null;
+
             const tags = await roomJoinRepository.getMostUsedTags(userId);
             const reviews = await userRepository.getReviewCount(userId);
             const parsedReviews = await this.utilService.parseReview(reviews);

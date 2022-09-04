@@ -51,6 +51,6 @@ room/user_info api 수정             v
 firebase 푸시 api 작성              v
 
 08/29 ~
-redis cache로 roomname의 peerId 저장
+redis cache로 roomname의 peerId 저장v
 firebase fcm exit 이미지 넣기       v
-database utc 시간 변환 문제 해결   
+database utc 시간 변환 문제 해결    

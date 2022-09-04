@@ -33,7 +33,7 @@ export class ProfileService {
         const userRepository = queryRunner ? queryRunner.manager.getCustomRepository(UserRepository) : this.userRepository;
         try{
             const count = await userRepository.getReviewCount(userId);
-            if(!count) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_MY_INFO_ERROR_CODE);
+            if(count.length == 0) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.GET_MY_INFO_ERROR_CODE);
             return count;
         } catch(err){
             if(err instanceof DatabaseException) throw err;

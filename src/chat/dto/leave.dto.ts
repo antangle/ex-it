@@ -7,9 +7,11 @@ export class LeaveDto {
     @IsString()
     nickname: string;
 
-    @IsOptional()
     @IsString()
     peerId: string;
+
+    @IsString()
+    status: string;
 }
 
 export class LeavedDto {

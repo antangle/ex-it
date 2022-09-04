@@ -1,3 +1,6 @@
+import { LeaveDto } from './../../chat/dto/leave.dto';
+import { FindPeerDto } from './dto/find-peer.dto';
+import { RedisService } from './../redis/redis.service';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { Status } from 'src/consts/enum';
 import { JoinRoomDto } from './dto/join.dto';
@@ -13,7 +16,7 @@ import { QueryRunner } from 'typeorm';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Connection } from 'typeorm';
-import { Body, Controller, Get, Post, HttpStatus } from '@nestjs/common';
+import { Body, Controller, Get, Post, HttpStatus, Inject, Logger } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { SetCode, SetJwtAuth, makeApiResponse, ApiResponses } from 'src/functions/util.functions';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
@@ -26,13 +29,17 @@ import { UserInfoResponse } from './response/user-info.response';
 import { GetEndRoomResponse } from './response/end.response';
 import { consts } from 'src/consts/consts';
 import { OccupiedResponse } from './response/occupied.response';
+import { FindPeerResponse } from './response/find-peer.response';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @ApiTags('room')
 @Controller('room')
 export class RoomController {
   constructor(
     private readonly roomService: RoomService,
-    private connection: Connection
+    private readonly redisService: RedisService,
+    private connection: Connection,
+    @Inject(WINSTON_MODULE_NEST_PROVIDER) private logger: Logger
   ){}
 
   //gets main tag for makeroom
@@ -176,12 +183,15 @@ export class RoomController {
 
       const hostAndSpeaker = await this.roomService.getHostAndSpeaker(roomId);
       const hostUserId = hostAndSpeaker[0].id;
-      let speakerUserId = null;
-      if(hostAndSpeaker.length > 1) speakerUserId = hostAndSpeaker[1].id;
-      const host = await this.roomService.getUserInfo(hostUserId, queryRunner);
-      const speaker = await this.roomService.getUserInfo(speakerUserId, queryRunner);
-      await queryRunner.commitTransaction();
+      const speakerUserId = hostAndSpeaker[0].is_occupied ? hostAndSpeaker[1].id : null;
 
+      this.logger.verbose(`host and speaker: ${JSON.stringify(hostAndSpeaker)}`)
+      this.logger.verbose(hostUserId)
+
+      const host = await this.roomService.getUserInfo(hostUserId, queryRunner);
+      const speaker = speakerUserId ? await this.roomService.getUserInfo(speakerUserId, queryRunner) : null;
+
+      await queryRunner.commitTransaction();
       return makeApiResponse(HttpStatus.OK, {host, speaker, tokens});
     } catch(err){
       await queryRunner.rollbackTransaction();
@@ -242,9 +252,9 @@ export class RoomController {
           is_occupied: null,
           is_online: true
         };
-        updateRoomDto.is_occupied = null;
         if(!roomEndDto.continue) updateRoomDto.is_online = false;
-        await this.roomService.updateRoomOnline(roomId, updateRoomDto);
+        await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
+        await this.redisService.removeRoomKey(roomEndDto.roomname)
       }
 
       if(roomEndDto.status != Status.GUEST){
@@ -252,7 +262,7 @@ export class RoomController {
         if(roomEndDto.review_id != 0){
           //get fellow id from roomJoin
           let status = roomEndDto.status == Status.SPEAKER? Status.HOST : Status.SPEAKER;
-          const fellowId = await this.roomService.getUserIdFromStatus(roomId, status);
+          const fellowId = await this.roomService.getUserIdFromStatus(roomId, status, queryRunner);
 
           const review = this.roomService.makeReview(roomEndDto, fellowId);
           await this.roomService.createReview(review, queryRunner);
@@ -320,7 +330,6 @@ export class RoomController {
     return makeApiResponse(HttpStatus.OK, {isOccupied, tokens});
   }                                           
 
-
   @ApiOperation({
     summary: '채팅방 입장',
     description: `
@@ -337,7 +346,7 @@ export class RoomController {
     type: JoinRoomDto
   })
   @SetJwtAuth()
-  @SetCode(208)
+  @SetCode(210)
   @Post('join')
   async joinRoom(
     @AuthToken() tokens: Tokens,
@@ -348,15 +357,17 @@ export class RoomController {
     const status = joinRoomDto.status;
 
     const queryRunner = this.connection.createQueryRunner();
+    
+    if(status == Status.SPEAKER){
+      const isOccupied = await this.roomService.checkOccupied(roomId);
+      //if other speaker already joined in room.
+      if(isOccupied) return makeApiResponse(HttpStatus.ACCEPTED, consts.ALREADY_OCCUPIED)
+    }
 
     try{
       await queryRunner.connect();
       await queryRunner.startTransaction();
       if(status == Status.SPEAKER){
-        const isOccupied = await this.roomService.checkOccupied(roomId);
-        //if someone already joined in room.
-        if(isOccupied && isOccupied >= new Date()) return makeApiResponse(HttpStatus.ACCEPTED, consts.ALREADY_OCCUPIED)
-
         const updateRoomDto: UpdateRoomDto = {
           is_occupied: new Date()
         };
@@ -374,5 +385,38 @@ export class RoomController {
     } finally {
       await queryRunner.release();
     }
+  }
+
+
+  @ApiOperation({
+    summary: 'peer 확인',
+    description: '해당 방의 peerId 리스트 확인.',
+  })
+  @ApiResponses(FindPeerResponse)
+  @SetJwtAuth()
+  @SetCode(211)
+  @Post('peer')
+  async findPeers(
+    @Body() findPeerDto: FindPeerDto,
+    @AuthToken() tokens: Tokens,
+  ){
+    const peers = await this.redisService.getRoomPeerCache(findPeerDto.roomname);
+    return makeApiResponse(HttpStatus.OK, {tokens, peers});
+  }      
+
+  @ApiOperation({
+    summary: 'peer 제거',
+    description: '해당 roomnade의 모든 정보를 cache에서 제거',
+  })
+  @ApiResponses(BaseOKResponseWithTokens)
+  @SetJwtAuth()
+  @SetCode(212)
+  @Post('remove_room_peers')
+  async removePeer(
+    @Body() findPeerDto: FindPeerDto,
+    @AuthToken() tokens: Tokens,
+  ){
+    const peers = await this.redisService.removeRoomKey(findPeerDto.roomname);
+    return makeApiResponse(HttpStatus.OK, {tokens});
   }
 }

@@ -6,7 +6,7 @@ import path from "path";
 @Injectable()
 export class TypeOrmConfig implements TypeOrmOptionsFactory {
     constructor(private configService: ConfigService) {}
-    createTypeOrmOptions(): TypeOrmModuleOptions {
+    createTypeOrmOptions(): TypeOrmModuleOptions & {timezone: string} {
         return {
             type: "postgres",
             host: this.configService.get<string>('POSTGRES_HOST'),
@@ -15,7 +15,8 @@ export class TypeOrmConfig implements TypeOrmOptionsFactory {
             password: this.configService.get<string>('POSTGRES_PASSWORD'),
             database: this.configService.get<string>('POSTGRES_DB'),
             synchronize: false,
-            logging: true,
+            timezone: 'Asia/Seoul',
+            logging: this.configService.get<string>('DEVMODE') == 'dev' ? true : false,
             logger: 'advanced-console',
             migrationsRun: false,
             entities: [

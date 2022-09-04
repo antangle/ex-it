@@ -4,14 +4,14 @@ import { IsBoolean, IsDate, IsEmail, IsNumber, IsOptional, IsString } from "clas
 export class CreateUserDto {
 
     @ApiProperty({
-        default: 'test@naver.com'
+        default: 'testuser@naver.com'
     })
     @IsEmail()
     @IsString()
     email?: string;
 
     @ApiProperty({
-        default: 'password123',
+        default: 'testpassword',
     })
     @IsString()
     @IsOptional()

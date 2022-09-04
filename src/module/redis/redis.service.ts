@@ -1,3 +1,5 @@
+import { LeaveDto } from './../../chat/dto/leave.dto';
+import { PeerJoinDto } from './../../chat/dto/peer-join.dto';
 import { VerifyCache } from './../../types/user.d';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRedis, Redis } from '@nestjs-modules/ioredis';
@@ -26,19 +28,36 @@ export class RedisService {
     }
 
     async getRoomPeerCache(key: string): Promise<string[]>{
-        this.logger.verbose(key);
-        return await this.redis.smembers(key);
+        const payload = await this.redis.smembers(key);
+        this.logger.log(payload);
+        const peers = [];
+        if(payload){
+            payload.map(value => {
+                peers.push(JSON.parse(value));
+            });
+        }
+        this.logger.verbose(peers);
+        return peers;
     }
-    
-    async setRoomPeerCache(roomname: string, peerId: string){
-        this.logger.verbose(`...saving cache...\nkey: ${roomname} value: ${peerId}`);
-        await this.redis.sadd(roomname, peerId);
+
+    async setRoomPeerCache(data: PeerJoinDto){
+        const {roomname, peerId, nickname, status} = data;
+        this.logger.verbose(`...saving cache...\nkey: ${roomname} value: ${JSON.stringify(data)}`);
+        const payload = JSON.stringify({peerId, nickname, status})
+        await this.redis.sadd(roomname, payload);
         return true;
     }
 
-    async removeRoomPeerCache(roomname: string, peerId: string){
-        this.logger.verbose(`...removing cache...\nkey: ${roomname} value: ${peerId}`);
-        await this.redis.srem(roomname, peerId);
+    async removeRoomPeerCache(data: LeaveDto){
+        const {roomname, peerId, nickname, status} = data;
+        this.logger.verbose(`...removing cache...\nkey: ${roomname} value: ${JSON.stringify(data)}`);
+        const payload = JSON.stringify({peerId, nickname, status})
+        await this.redis.srem(roomname, payload);
         return true;
+    }
+    
+    async removeRoomKey(roomname: string){
+        this.logger.verbose(`...unlinking key...\nkey: ${roomname}`);
+        await this.redis.unlink(roomname);
     }
 }

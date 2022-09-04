@@ -1,3 +1,4 @@
+import { MyRedisModule } from './../redis/redis.module';
 import { Ban } from './../../entities/ban.entity';
 import { Review } from './../../entities/review.entity';
 import { RoomJoin } from './../../entities/roomJoin.entity';
@@ -28,6 +29,7 @@ import { RoomJoinRepository } from './room-join.repository';
     AuthModule,
     UtilModule,
     UserModule,
+    MyRedisModule
   ],
   controllers: [RoomController],
   providers: [RoomService]

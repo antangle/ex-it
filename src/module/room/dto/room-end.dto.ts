@@ -1,7 +1,7 @@
 import { Status } from 'src/consts/enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import { IsBoolean, IsEnum, IsNumber, IsString } from 'class-validator';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class RoomEndDto {
     @ApiProperty({
@@ -57,4 +57,12 @@ export class RoomEndDto {
     })
     @IsBoolean()
     continue?: boolean;
+
+    @ApiProperty({
+        description: 'host 인 경우만 값이 필요하다. 아니라면 해당 항목을 주지 않거나 null을 줘도된다.',
+        default: 'faoiwejfioawej-fjaowiejfoiaewjf'
+    })
+    @IsString()
+    @IsOptional()
+    roomname?: string;
 }

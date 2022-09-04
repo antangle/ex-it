@@ -38,11 +38,12 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
     async getHostAndSpeaker(roomId: number): Promise<any[]>{
         const status = ['host', 'speaker'];
         return await this.createQueryBuilder('room_join')
-            .select('user.id AS id')
-            .where('room_join.roomId = :roomId', {roomId: roomId})            
+            .select('room_join.userId AS id')
+            .where('room_join.roomId = :roomId', {roomId: roomId})
             .andWhere('room_join.status IN (:...status)')
             .setParameter('status', status)
-            .leftJoin('room_join.user', 'user')
+            .innerJoin('room_join.room', 'room')
+            .addSelect('room.is_occupied', 'is_occupied')
             .orderBy('room_join.status', 'ASC')
             .addOrderBy('room_join.created_at', 'DESC')
             .limit(2)

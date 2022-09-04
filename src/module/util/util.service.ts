@@ -177,6 +177,7 @@ export class UtilService {
     }
 
     async parseReview(reviews: any[]){
+        if(reviews.length == 0) return null;
         const reviewMapper = await this.findReviews();
         try{
             let data = {};

@@ -1,3 +1,4 @@
+import { RoomRepository } from './../room/room.repository';
 import { FcmService } from './../fcm/fcm.service';
 import { BadRequestCustomException } from './../../exception/bad-request.exception';
 import { RedisService } from './../redis/redis.service';
@@ -18,8 +19,15 @@ export class TestController {
     private readonly utilService: UtilService,
     private readonly authService: AuthService,
     private readonly connection: Connection,
-    private readonly fcmService: FcmService
+    private readonly fcmService: FcmService,
+    private readonly roomRepository: RoomRepository,
     ) {}
+
+  @Post('time')
+  @SetCode(900)
+  async time(@Request() req, @Body('access_token') accessToken: string){
+    return await this.roomRepository.find();
+  }
 
   @Post('fcm')
   @SetCode(900)

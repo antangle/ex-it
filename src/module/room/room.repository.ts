@@ -56,13 +56,13 @@ export class RoomRepository extends Repository<Room> {
             .select([
                 'room.id', 
                 'room.hardcore AS hardcore', 
-                'room.created_at AS created_at', 
+                'room.created_at', 
                 'room.title AS title',
                 'room.guest AS guest',    
                 'room.nickname AS nickname',
-                'room.is_occupied AS is_occupied',
                 'room.roomname AS roomname'
             ])
+            .addSelect('CASE WHEN room.is_occupied IS NOT NULL THEN True ELSE False END', 'is_occupied')
             .addSelect('tag_array.tags, tag_array.tagIds')
             .addSelect('COALESCE(guest.guest_count::INTEGER, 0) AS guest_count')
             .where('room.is_online = true')

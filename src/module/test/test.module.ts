@@ -1,3 +1,4 @@
+import { RoomRepository } from './../room/room.repository';
 import { FcmModule } from './../fcm/fcm.module';
 import { AuthRepository } from 'src/module/auth/auth.repository';
 import { UserRepository } from 'src/module/user/user.repository';
@@ -13,7 +14,7 @@ import { TestController } from './test.controller';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([AuthRepository, UserRepository]),
+    TypeOrmModule.forFeature([AuthRepository, UserRepository, RoomRepository]),
     AuthModule,
     MyRedisModule,
     UtilModule,

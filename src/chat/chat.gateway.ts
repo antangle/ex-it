@@ -73,7 +73,7 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
       @MessageBody(new SocketValidationPipe()) data: PeerJoinDto,
   ) {
     await socket.join(data.roomname);
-    await this.redisService.setRoomPeerCache(data.roomname, data.peerId);
+    await this.redisService.setRoomPeerCache(data);
     const payload: PeerConnectedDto = {
       peerId: data.peerId,
       nickname: data.nickname
@@ -178,7 +178,7 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
       @MessageBody(new SocketValidationPipe()) data: LeaveDto
   ) {
     await socket.leave(data.roomname);
-    await this.redisService.removeRoomPeerCache(data.roomname, data.peerId)
+    await this.redisService.removeRoomPeerCache(data)
     const payload: LeavedDto = {
       nickname: data.nickname
     }

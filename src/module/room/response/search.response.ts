@@ -16,7 +16,7 @@ abstract class SearchResponseData {
     @ApiProperty({
         description: '방 생성 시간'
     })
-    created_at: Date;
+    room_created_at: Date;
     
     @ApiProperty({
         description: '방 제목',

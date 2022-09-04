@@ -1,4 +1,4 @@
-import { IsString } from "class-validator";
+import { IsOptional, IsString } from "class-validator";
 
 export class PeerJoinDto {
     @IsString()
@@ -9,6 +9,9 @@ export class PeerJoinDto {
 
     @IsString()
     nickname: string;
+
+    @IsString()
+    status: string;
 }
 
 export class PeerConnectedDto {
