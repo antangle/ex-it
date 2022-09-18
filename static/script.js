@@ -39,7 +39,7 @@ const initStream = async () => {
     const noAudioStream = new MediaStream(mediaStream.getVideoTracks());
     const myVideo = document.createElement('video');
     addVideoStream(myVideo, noAudioStream, localVideo);
-    
+
     peer = new Peer();
 
     peer.on('open', peerId => {
@@ -51,7 +51,7 @@ const initStream = async () => {
         }
         socket.emit('join-room', data);
     });
-    
+
     //if new user connects to socket with roomname, new user's peerId is given. call other peers with that id with mediaStream
     socket.on('peer-connected', (data) => {
         const destPeerId = data.peerId;
@@ -94,7 +94,9 @@ const connectToNewUser = (newUserId, stream) => {
         addVideoStream(video, userVideoStream, remoteVideo);
     });
 }
-
+function muteCam(b) {
+    localStream.getVideoTracks().forEach(track => track.enabled = b);
+  }
 const addVideoStream = (video, stream, position) => {
 
     let audio = new Audio();

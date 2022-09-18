@@ -8,18 +8,12 @@ export class RoomEndDto {
         description: '해당 방의 id',
         default: 1
     })
-    @Transform(({value}) => {
-        return isNaN(value) ? value : parseInt(value);
-    })
     @IsNumber()
     room_id: number;
     
     @ApiProperty({
         description: '선택한 리뷰 id. 선택하지 않음은 0으로',
         default: 1
-    })
-    @Transform(({value}) => {
-        return isNaN(value) ? value : parseInt(value);
     })
     @IsNumber()
     review_id: number;
@@ -28,18 +22,12 @@ export class RoomEndDto {
         description: '통화 시간, 초(s)단위',
         default: 65
     })
-    @Transform(({value}) => {
-        return isNaN(value) ? value : parseInt(value);
-    })
     @IsNumber()
     call_time: number;
     
     @ApiProperty({
         description: '총 대화 시간. 채팅 + 통화 시간 전부 포함, 초(s)단위',
         default: 140
-    })
-    @Transform(({value}) => {
-        return isNaN(value) ? value : parseInt(value);
     })
     @IsNumber()
     total_time: number;
@@ -56,13 +44,31 @@ export class RoomEndDto {
         default: false
     })
     @IsBoolean()
+    @IsOptional()
     continue?: boolean;
 
     @ApiProperty({
-        description: 'host 인 경우만 값이 필요하다. 아니라면 해당 항목을 주지 않거나 null을 줘도된다.',
+        description: '방의 roomname',
         default: 'faoiwejfioawej-fjaowiejfoiaewjf'
     })
     @IsString()
     @IsOptional()
     roomname?: string;
+
+    @ApiProperty({
+        description: '사용자의 nickname',
+        default: 'zounvy'
+    })
+    @IsOptional()
+    @IsString()
+    nickname?: string;
+
+    @ApiProperty({
+        description: '사용자의 peerId',
+        default: 'faoiwejfioawej-fjaowiejfoiaewjf'
+    })
+    @IsOptional()
+    @IsString()
+    peerId?: string;
+
 }

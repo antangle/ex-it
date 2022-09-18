@@ -53,4 +53,11 @@ firebase 푸시 api 작성              v
 08/29 ~
 redis cache로 roomname의 peerId 저장v
 firebase fcm exit 이미지 넣기       v
-database utc 시간 변환 문제 해결    
+database utc 시간 변환 문제 해결    v
+
+09/12
+review 탈퇴한 계정일 때 데이터 비가시화 - 문제 없는데?
+방을 삭제처리하고 갱신 안된쪽 아이디로 남아있는 방에 접속처리 요청하면 정상 메세지 와서 확인이 필요합니다. v
+
+
+peerId 지우는 로직 개선

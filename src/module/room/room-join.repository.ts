@@ -28,10 +28,11 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
                 total_time: () => 'total_time + :total_time',
                 call_time: () => 'call_time + :call_time'
             })
-            .where('userId = :userId', {userId: userId})
+            .where('status = :status', {status: status})
+            .andWhere('userId = :userId', {userId: userId})
             .andWhere('roomId = :roomId', {roomId: roomId})
-            .andWhere('status = :status', {status: status})
             .setParameters(updateRoomJoinDto)
+            .returning(['id'])
             .execute();
     }
 

@@ -1,3 +1,5 @@
+import { RedisService } from './../redis/redis.service';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { SearchRoomDto } from './dto/search-room.dto';
 import { UtilService } from './../util/util.service';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -18,15 +20,17 @@ import { DatabaseException } from './../../exception/database.exception';
 import { Repository, InsertResult, TypeORMError } from 'typeorm';
 import { Tag } from './../../entities/tag.entity';
 import { QueryRunner } from 'typeorm';
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { consts } from 'src/consts/consts';
 import { Room } from 'src/entities/room.entity';
+import { CustomError } from 'src/exception/custom.exception';
 
 @Injectable()
 export class RoomService {
     constructor(
         private utilService: UtilService,
+        private redisService: RedisService,
         private userRepository: UserRepository,
         private roomRepository: RoomRepository,
         private roomJoinRepository: RoomJoinRepository,
@@ -34,6 +38,8 @@ export class RoomService {
         @InjectRepository(Review) private reviewRepository: Repository<Review>,
         @InjectRepository(RoomTag) private roomTagRepository: Repository<RoomTag>,
         @InjectRepository(Ban) private banRepository: Repository<Ban>,
+        @Inject(WINSTON_MODULE_NEST_PROVIDER) private logger: Logger,
+
     ){}
 
     async getMainTags(queryRunner ?: QueryRunner){
@@ -172,11 +178,12 @@ export class RoomService {
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
             const rooms = await roomRepository.searchRoomsPaged(userId, searchRoomDto);
-            if(rooms.length == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_ALL_ROOMS_ERROR_CODE);
+            console.log(rooms)
             return rooms;
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.GET_ALL_ROOMS_ERROR_CODE, err);
-            else throw new UnhandledException(this.getMainTags.name, consts.GET_ALL_ROOMS_ERROR_CODE, err);
+            else if(err instanceof CustomError) throw err;
+            else throw new UnhandledException(this.getSearchedRooms.name, consts.GET_ALL_ROOMS_ERROR_CODE, err);
         }
     }
 
@@ -216,10 +223,13 @@ export class RoomService {
     async updateRoomJoin(userId: number, roomId: number, status: string, updateRoomJoinDto: UpdateRoomJoinDto, queryRunner?: QueryRunner){
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
-            await roomJoinRepository.updateTime(userId, roomId, status, updateRoomJoinDto);
-
+            const updateResult = await roomJoinRepository.updateTime(userId, roomId, status, updateRoomJoinDto);
+            this.logger.log(userId);
+            this.logger.log(JSON.stringify(updateResult));
+//            if(updateResult.affected == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.UPDATE_ROOM_JOIN_ERROR_CODE);
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_JOIN_ERROR_CODE, err);
+            else if(err instanceof CustomError) throw err;
             else throw new UnhandledException(this.updateRoomJoin.name, consts.UPDATE_ROOM_JOIN_ERROR_CODE, err);
         }
     }
@@ -235,10 +245,9 @@ export class RoomService {
                 order: {
                     created_at: 'DESC'
                 },
-            })
-            if(!roomJoin) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_USERID_FROM_STATUS_ERROR_CODE);
+            });
 
-            return roomJoin.userId;
+            return roomJoin ? roomJoin.userId : null;
         } catch(err){
             if(err instanceof NotExistsException) throw err;
             else if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.GET_USERID_FROM_STATUS_ERROR_CODE, err);
@@ -330,8 +339,16 @@ export class RoomService {
     async checkOccupied(roomId: number, queryRunner?: QueryRunner){
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
-            const room = await roomRepository.findOne(roomId);
-            return room.is_occupied;
+            const speakerCache = await this.redisService.getRoomSpeakerCache(roomId);
+            let isOccupied: boolean;
+            if(speakerCache){
+                isOccupied = true;
+            } else{
+                const room = await roomRepository.findOne(roomId);
+                if(!room) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.CHECK_OCCUPIED_ERROR_CODE);
+                isOccupied = room.is_occupied ? true : false || !room.is_online;;
+            }
+            return isOccupied;
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.CHECK_OCCUPIED_ERROR_CODE, err);
             else throw new UnhandledException(this.checkOccupied.name, consts.CHECK_OCCUPIED_ERROR_CODE, err);

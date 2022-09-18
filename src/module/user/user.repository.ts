@@ -58,7 +58,6 @@ export class UserRepository extends Repository<User> {
         let query = this.createQueryBuilder('user')
             .select('user.nickname AS nickname')
             .addSelect('review.reviewMapperId, COUNT(review.reviewMapperId) AS count')
-            
             .leftJoin('user.review', 'review')
             .groupBy('user.nickname, review.reviewMapperId')
 

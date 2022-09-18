@@ -104,7 +104,7 @@ export class RoomRepository extends Repository<Room> {
             .offset(take*page)
             .limit(take)
         
-        return query.getRawMany();
+        return await query.getRawMany();
 
     }
 

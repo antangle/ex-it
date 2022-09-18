@@ -1,4 +1,5 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
+import { Status } from "src/consts/enum";
 
 export class PeerJoinDto {
     @IsString()
@@ -10,7 +11,7 @@ export class PeerJoinDto {
     @IsString()
     nickname: string;
 
-    @IsString()
+    @IsEnum(Status)
     status: string;
 }
 

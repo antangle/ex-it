@@ -17,6 +17,7 @@ export const consts = {
     SMS: 'SMS',
     FROM_PHONE_NUMBER: '01090204201',
     PHONE_VERIFY_TTL: 180,
+    SPEAKER_TTL: 20,
 
     //for testing purposes
     LOCAL_URL: 'https://ex-it.app/health',
@@ -63,7 +64,7 @@ export const consts = {
     DUPLICATE_ACCOUNT_ERROR: 'this account is already signed in',
     SERVER_ERROR: 'server error',
     NOT_FOUND: '404 Not Found',
-    ALREADY_OCCUPIED: 'room already occupied',
+    ALREADY_OCCUPIED: 'room already occupied or offline',
     SENS_RESPONSE_ERROR: 'http response error',
     TOO_MANY_REQUESTS: 'TOO_MANY_REQUESTS',
     WS_VALIDATION_EXCEPTION: 'websocket validation error',
@@ -121,4 +122,5 @@ export const consts = {
     GET_HOST_AND_SPEAKER_ERROR_CODE: 48,
     VALIDATION_ERROR_CODE: 49,
     SEND_FCM_MESSAGE_ERR_CODE: 50,
+    ALREADY_OCCUPIED_ERROR_CODE: 51,
 }

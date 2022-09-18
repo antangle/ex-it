@@ -185,7 +185,7 @@ export class UtilService {
                 data[reviewMapper[i].id] = {
                     title: reviewMapper[i].title,
                     review_id: reviewMapper[i].id,
-                    count: 0
+                    count: '0'
                 }
             }
             if(reviews[0].reviewMapperId != null){

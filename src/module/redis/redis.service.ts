@@ -55,9 +55,21 @@ export class RedisService {
         await this.redis.srem(roomname, payload);
         return true;
     }
-    
+
     async removeRoomKey(roomname: string){
         this.logger.verbose(`...unlinking key...\nkey: ${roomname}`);
         await this.redis.unlink(roomname);
+    }
+
+    async setRoomSpeakerCache(roomId: number, userId: number){
+        this.logger.verbose(`...saving speaker cache...\nkey: ${roomId} value: ${userId}`);
+        await this.redis.set(roomId.toString(), userId, 'ex', consts.SPEAKER_TTL);
+        return true;
+    }
+    
+    async getRoomSpeakerCache(roomId: number){
+        this.logger.verbose(`...getting speaker cache...\nkey: ${roomId}`);
+        const userId = await this.redis.get(roomId.toString());
+        return userId;
     }
 }

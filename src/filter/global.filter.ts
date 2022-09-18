@@ -14,6 +14,7 @@ import { Request, Response } from 'express';
 import { BaseExceptionFilter, Reflector } from '@nestjs/core';
 import { generateCode, makeApiResponse } from 'src/functions/util.functions';
 import { consts } from 'src/consts/consts';
+import { OccupiedException } from 'src/exception/occupied.exception';
 
 @Catch()
 export class GlobalExceptionFilter extends BaseExceptionFilter {
@@ -93,6 +94,10 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
       case FirebaseException:
         if(!msg) msg = consts.SEND_FCM_MESSAGE_ERR_MSG;
         apiResponse = makeApiResponse(HttpStatus.INTERNAL_SERVER_ERROR, null, msg)
+        break;
+      case OccupiedException:
+        if(!msg) msg = consts.ALREADY_OCCUPIED;
+        apiResponse = makeApiResponse(HttpStatus.CONFLICT, null, msg)
         break;
       default:
         if(!msg) msg = consts.SERVER_ERROR;

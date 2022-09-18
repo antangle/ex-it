@@ -27,9 +27,19 @@ import * as winston from 'winston';
           level: process.env.DEVMODE === 'dev' ? 'silly': 'info',
           format: winston.format.combine(
             winston.format.timestamp(),
-            nestWinstonModuleUtilities.format.nestLike('MyApp', { prettyPrint: true }),
+            nestWinstonModuleUtilities.format.nestLike('Ex-it', { prettyPrint: true }),
           ),
         }),
+        new winston.transports.File({
+          filename: `ex_it-${new Date().toISOString().split('T')[0]}.log`,
+          dirname: 'logs',
+          level: 'info'
+        }),
+        new winston.transports.File({
+          filename: `ex_it-errors-${new Date().toISOString().split('T')[0]}.log`,
+          dirname: 'logs',
+          level: 'warn'
+        })
       ],
     }),
     CacheModule.register(),
