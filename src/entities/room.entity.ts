@@ -1,7 +1,7 @@
 import { Review } from './review.entity';
 import { RoomTag } from './roomTag.entity';
 import { RoomJoin } from './roomJoin.entity';
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinTable, ManyToOne, OneToMany, DeleteDateColumn } from 'typeorm';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, OneToOne, JoinTable, ManyToOne, OneToMany, DeleteDateColumn, VersionColumn } from 'typeorm';
 import { User } from './user.entity';
 import { ApiHideProperty } from '@nestjs/swagger';
 
@@ -61,4 +61,11 @@ export class Room {
     type: 'timestamptz'
   })
   is_occupied?: Date = null;
+  
+  @ApiHideProperty()
+  @VersionColumn({
+    default: 0
+  })
+  version?: number;
+
 }

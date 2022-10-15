@@ -7,7 +7,6 @@ import { NotExistsException } from './../../exception/not-exist.exception';
 import { UpdateRoomJoinDto } from './dto/room-join-update.dto';
 import { Ban } from './../../entities/ban.entity';
 import { RoomEndDto } from './dto/room-end.dto';
-import { reviewMapperArray } from './../../functions/util.functions';
 import { Review } from './../../entities/review.entity';
 import { RoomJoinRepository } from './room-join.repository';
 import { RoomJoin } from './../../entities/roomJoin.entity';
@@ -224,8 +223,6 @@ export class RoomService {
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
             const updateResult = await roomJoinRepository.updateTime(userId, roomId, status, updateRoomJoinDto);
-            this.logger.log(userId);
-            this.logger.log(JSON.stringify(updateResult));
 //            if(updateResult.affected == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.UPDATE_ROOM_JOIN_ERROR_CODE);
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_JOIN_ERROR_CODE, err);
@@ -349,6 +346,7 @@ export class RoomService {
                 isOccupied = room.is_occupied ? true : false || !room.is_online;;
             }
             return isOccupied;
+            
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.CHECK_OCCUPIED_ERROR_CODE, err);
             else throw new UnhandledException(this.checkOccupied.name, consts.CHECK_OCCUPIED_ERROR_CODE, err);

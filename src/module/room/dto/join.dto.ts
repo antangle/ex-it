@@ -18,4 +18,6 @@ export class JoinRoomDto {
     })
     @IsNumber()
     room_id: number;
+
+    
 }

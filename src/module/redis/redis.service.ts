@@ -29,7 +29,7 @@ export class RedisService {
 
     async getRoomPeerCache(key: string): Promise<string[]>{
         const payload = await this.redis.smembers(key);
-        this.logger.log(payload);
+        this.logger.verbose(payload);
         const peers = [];
         if(payload){
             payload.map(value => {
@@ -66,10 +66,16 @@ export class RedisService {
         await this.redis.set(roomId.toString(), userId, 'ex', consts.SPEAKER_TTL);
         return true;
     }
-    
+
+    async removeRoomSpeakerCache(roomId: number){
+        this.logger.verbose(`...removing speaker cache...\nkey: ${roomId}`);
+        await this.redis.del(roomId.toString());
+        return true;
+    }
+
     async getRoomSpeakerCache(roomId: number){
         this.logger.verbose(`...getting speaker cache...\nkey: ${roomId}`);
         const userId = await this.redis.get(roomId.toString());
-        return userId;
+        return +userId;
     }
 }

@@ -7,7 +7,7 @@ import { consts } from 'src/consts/consts';
 @EntityRepository(RoomJoin)
 export class RoomJoinRepository extends Repository<RoomJoin> {
     async getMostUsedTags(userId: number){
-        const status = ['host', 'speaker'];
+        const status = [consts.HOST, consts.SPEAKER];
         return await this.createQueryBuilder('room_join')
             .select('tag.name AS tag, COUNT(tag.id) AS count')
             .where('room_join.userId = :userId', {userId: userId})
@@ -37,7 +37,7 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
     }
 
     async getHostAndSpeaker(roomId: number): Promise<any[]>{
-        const status = ['host', 'speaker'];
+        const status = [consts.HOST, consts.SPEAKER];
         return await this.createQueryBuilder('room_join')
             .select('room_join.userId AS id')
             .where('room_join.roomId = :roomId', {roomId: roomId})

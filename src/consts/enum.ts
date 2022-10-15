@@ -1,12 +1,12 @@
 export enum Status {
-    HOST = 'host',
-    GUEST = 'guest',
-    SPEAKER = 'speaker'
+    HOST = 'HOST',
+    GUEST = 'GUEST',
+    SPEAKER = 'SPEAKER'
 }
 
 export enum StatusWithoutHost {
-    GUEST = 'guest',
-    SPEAKER = 'speaker'
+    GUEST = 'GUEST',
+    SPEAKER = 'SPEAKER'
 }
 
 export enum OauthType {

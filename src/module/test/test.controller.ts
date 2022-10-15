@@ -23,6 +23,23 @@ export class TestController {
     private readonly roomRepository: RoomRepository,
     ) {}
 
+    @Post('lock')
+    @SetCode(900)
+    async lock(@Request() req, @Body('room_id') roomId: number){
+      const room = await this.roomRepository.findOne({
+        where: {
+          id: roomId
+        },
+        lock: {
+          mode: 'optimistic',
+          version: 0
+        }
+      })
+      return room;
+    }
+  
+
+
   @Post('time')
   @SetCode(900)
   async time(@Request() req, @Body('access_token') accessToken: string){

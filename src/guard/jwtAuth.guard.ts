@@ -6,7 +6,6 @@ import { JwtService } from '@nestjs/jwt';
 import { ExecutionContext, Inject, Injectable, Logger } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { Request } from 'express';
-import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { UnauthorizedUserException } from 'src/exception/unauthorized.exception';
 import { TokenData } from 'src/response/response.dto';
 

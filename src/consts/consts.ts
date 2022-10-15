@@ -4,9 +4,10 @@ export const consts = {
     LIMIT_MOST_USED_TAGS: 3,
     PAGINATION_TAKE: 20,
     LOCAL: 'local',
-    SPEAKER: 'speaker',
-    GUEST: 'guest',
-
+    SPEAKER: 'SPEAKER',
+    GUEST: 'GUEST',
+    HOST: 'HOST',
+    NO_REVIEW_NUMBER: 5,
     //peer
     ROOM_CACHE_TTL: 3600*24,
 

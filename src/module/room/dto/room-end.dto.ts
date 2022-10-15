@@ -2,6 +2,7 @@ import { Status } from 'src/consts/enum';
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { consts } from 'src/consts/consts';
 
 export class RoomEndDto {
     @ApiProperty({
@@ -33,8 +34,8 @@ export class RoomEndDto {
     total_time: number;
 
     @ApiProperty({
-        description: 'host | speaker | guest',
-        default: 'host'
+        description: `${consts.HOST} | ${consts.SPEAKER} | ${consts.GUEST}`,
+        default: `${consts.HOST}`
     })
     @IsEnum(Status)
     status: string;
@@ -52,14 +53,12 @@ export class RoomEndDto {
         default: 'faoiwejfioawej-fjaowiejfoiaewjf'
     })
     @IsString()
-    @IsOptional()
     roomname?: string;
 
     @ApiProperty({
         description: '사용자의 nickname',
         default: 'zounvy'
     })
-    @IsOptional()
     @IsString()
     nickname?: string;
 
@@ -67,7 +66,6 @@ export class RoomEndDto {
         description: '사용자의 peerId',
         default: 'faoiwejfioawej-fjaowiejfoiaewjf'
     })
-    @IsOptional()
     @IsString()
     peerId?: string;
 

@@ -4,6 +4,7 @@ import { Review } from 'src/entities/review.entity';
 import { User } from 'src/entities/user.entity';
 import { EntityRepository, Repository, SelectQueryBuilder } from "typeorm";
 import { tags } from 'src/config/swagger.config';
+import { consts } from 'src/consts/consts';
 
 @EntityRepository(User)
 export class UserRepository extends Repository<User> {
@@ -24,7 +25,7 @@ export class UserRepository extends Repository<User> {
 
     //get max review count
     async getProfileQuery(param: string | number): Promise<any>{
-        const status = ['host', 'speaker'];
+        const status = [consts.HOST, consts.SPEAKER];
         let query = this.createQueryBuilder('user')
             .select('user.nickname AS nickname, user.alarm AS alarm')
             .addSelect([

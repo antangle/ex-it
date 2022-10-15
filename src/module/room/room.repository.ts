@@ -1,3 +1,4 @@
+import { Review } from './../../entities/review.entity';
 import { SearchRoomDto } from './dto/search-room.dto';
 import { Ban } from './../../entities/ban.entity';
 import { User } from 'src/entities/user.entity';
@@ -12,7 +13,7 @@ import { consts } from 'src/consts/consts';
 @EntityRepository(Room)
 export class RoomRepository extends Repository<Room> {
     async getAllRoomsPaged(page: number = 0, take: number = consts.PAGINATION_TAKE){
-        const status = ['host', 'speaker'];
+        const status = [consts.HOST, consts.SPEAKER];
         return await this.createQueryBuilder('room')
             .select([
                 'room.id', 
@@ -50,7 +51,7 @@ export class RoomRepository extends Repository<Room> {
     ){
         
         const {tag, title, take, page} = searchRoomDto;
-        const status = 'guest';
+        const status = consts.GUEST;
         let query = await this.createQueryBuilder('room')
             .distinct(true) 
             .select([
@@ -60,7 +61,7 @@ export class RoomRepository extends Repository<Room> {
                 'room.title AS title',
                 'room.guest AS guest',    
                 'room.nickname AS nickname',
-                'room.roomname AS roomname'
+                'room.roomname AS roomname',
             ])
             .addSelect('CASE WHEN room.is_occupied IS NOT NULL THEN True ELSE False END', 'is_occupied')
             .addSelect('tag_array.tags, tag_array.tagIds')
@@ -75,6 +76,15 @@ export class RoomRepository extends Repository<Room> {
                     .where('ban.userId = :userId')
                     .getQuery();
                 return "room.createUserId NOT IN " + subQuery;
+            })
+            //don't show if reviewed
+            .andWhere((qb) => {
+                const subQuery = qb.subQuery()
+                    .select()
+                    .from(Review, 'review')
+                    .where('review.roomId = room.id')
+                    .getQuery();
+                return "NOT EXISTS " + subQuery;
             })
             .setParameter('userId', userId)
             .innerJoin('room.room_tag', 'room_tag')
@@ -93,7 +103,8 @@ export class RoomRepository extends Repository<Room> {
                 }, 'guest', 'guest.roomId = room.id')
             .setParameter('status', status)
             .innerJoin('room_tag.tag', 'tag')
-            .orderBy('room.created_at', 'DESC')
+            .orderBy('is_occupied', 'ASC', 'NULLS FIRST')
+            .addOrderBy('room.created_at', 'DESC')
         if(tag != ''){
             query = query
                 .andWhere('tag.name = :tag')
