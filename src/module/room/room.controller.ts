@@ -1,3 +1,4 @@
+import { EndRoomException } from './../../exception/occupied.exception';
 import { LeaveDto } from './../../chat/dto/leave.dto';
 import { FindPeerDto } from './dto/find-peer.dto';
 import { RedisService } from './../redis/redis.service';
@@ -274,8 +275,6 @@ export class RoomController {
       if(roomEndDto.status == Status.GUEST || roomEndDto.review_id > consts.NO_REVIEW_NUMBER){
         roomEndDto.review_id = consts.NO_REVIEW_NUMBER;
       }
-      console.log(roomEndDto);
-      console.log(fellowId)
       if(fellowId){
         //get fellow id from roomJoin
         const review = this.roomService.makeReview(roomEndDto, fellowId);
@@ -370,6 +369,9 @@ export class RoomController {
     const status = joinRoomDto.status;
     const queryRunner = this.connection.createQueryRunner();
     
+    const isReviewed = await this.roomService.checkReviewed(roomId);
+    if(isReviewed) throw new EndRoomException(consts.END_ROOM_ERROR_MSG, consts.END_ROOM_ERROR_CODE)
+
     if(status == Status.SPEAKER){
       const isOccupied = await this.roomService.checkOccupied(roomId);
       //if other speaker already joined in room.

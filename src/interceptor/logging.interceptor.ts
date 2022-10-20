@@ -7,7 +7,6 @@ export class LoggingInterceptor implements NestInterceptor {
     constructor(private logger: Logger){}
 
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
-        console.log('interceptor...');
         const { method, url, body } = context.getArgByIndex(0);
         
         this.logger.log(`request ${method}, ${url}, ${JSON.stringify(body)}`)

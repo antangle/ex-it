@@ -177,7 +177,6 @@ export class RoomService {
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
             const rooms = await roomRepository.searchRoomsPaged(userId, searchRoomDto);
-            console.log(rooms)
             return rooms;
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.GET_ALL_ROOMS_ERROR_CODE, err);
@@ -210,7 +209,6 @@ export class RoomService {
                 where: {id: roomId},
                 relations: ['create_user']
             });
-            console.log(room);
             if(!room.create_user) throw new DatabaseException(consts.TARGET_NOT_EXIST, consts.FIND_ROOM_USER);
             return room.create_user;
         } catch(err){
@@ -343,13 +341,26 @@ export class RoomService {
             } else{
                 const room = await roomRepository.findOne(roomId);
                 if(!room) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.CHECK_OCCUPIED_ERROR_CODE);
-                isOccupied = room.is_occupied ? true : false || !room.is_online;;
+                isOccupied = (room.is_occupied )? true : false || !room.is_online;;
             }
             return isOccupied;
             
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.CHECK_OCCUPIED_ERROR_CODE, err);
             else throw new UnhandledException(this.checkOccupied.name, consts.CHECK_OCCUPIED_ERROR_CODE, err);
+        }
+    }
+
+    async checkReviewed(roomId: number, queryRunner?: QueryRunner){
+        const reviewRepository = queryRunner ? queryRunner.manager.getRepository(Review) : this.reviewRepository;
+        try{
+            const review = await reviewRepository.findOne({
+                where: { roomId: roomId }
+            })
+            return review ? true : false;
+        } catch(err){
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.CHECK_REVIEWED_ERROR_CODE, err);
+            else throw new UnhandledException(this.checkReviewed.name, consts.CHECK_REVIEWED_ERROR_CODE, err);
         }
     }
 

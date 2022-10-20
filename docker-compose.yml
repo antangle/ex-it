@@ -1,7 +1,7 @@
 version: "3.7"
 services:
   pgdb:
-    image: postgres
+    image: postgres:14-alpine
     container_name: ${POSTGRES_NAME}
     env_file:
       - .env
@@ -18,9 +18,9 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   exit_server:
-    build:
-      context: .
-      dockerfile: Dockerfile.prod 
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.prod 
     image: antangle/exit_server:production
     depends_on:
       - pgdb

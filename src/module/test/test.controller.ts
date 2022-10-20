@@ -68,7 +68,6 @@ export class TestController {
   @SetCode(900)
   async redisGet(@Body('key') key: string, @Body('val') val: number){
     const res = await this.redisService.getRoomPeerCache('asd');
-    console.log(res);
     return res;
   }
 
@@ -84,8 +83,6 @@ export class TestController {
   @SetCode(900)
   async startSms(){
     const temp = await this.utilService.sendSmsMessage('01075704801', 1234);
-    console.log('here2');
-    console.log(temp);
     return temp;
   }
 
@@ -109,7 +106,6 @@ export class TestController {
         .andWhere(`deleted_at < NOW() - INTERVAL '4 day'`)
         .returning('*')
         .execute()
-      console.log(deleted);
       await queryRunner.commitTransaction();
       return deleted;
     }

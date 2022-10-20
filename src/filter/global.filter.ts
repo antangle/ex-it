@@ -1,3 +1,4 @@
+import { EndRoomException } from './../exception/occupied.exception';
 import { FirebaseException } from './../exception/firebase.exception';
 import { ApiResult } from './../types/user.d';
 import { TooManyRequestException } from './../exception/bad-request.exception';
@@ -98,6 +99,10 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
       case OccupiedException:
         if(!msg) msg = consts.ALREADY_OCCUPIED;
         apiResponse = makeApiResponse(HttpStatus.CONFLICT, null, msg)
+        break;
+      case EndRoomException:
+        if(!msg) msg = consts.END_ROOM_ERROR_MSG;
+        apiResponse = makeApiResponse(HttpStatus.FORBIDDEN, null, msg)
         break;
       default:
         if(!msg) msg = consts.SERVER_ERROR;
