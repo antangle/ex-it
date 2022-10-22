@@ -63,9 +63,11 @@ review 탈퇴한 계정일 때 데이터 비가시화 - 문제 없는데?
 peerId 지우는 로직 개선
 
 10/20
-스피커 optimistic lock 구현
-게스트 나갈시 리뷰판정 제거
+스피커 optimistic lock 구현     v
+게스트 나갈시 리뷰판정 제거      v
 
-Room search 소팅                v
-Firebase 푸시 관련조사
-게스트 현재 수 확인
+Room search 소팅               v
+게스트 현재 수 확인             v
+Firebase 푸시 관련조사          v
+
+10/21

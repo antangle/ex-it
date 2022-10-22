@@ -73,6 +73,7 @@ export const consts = {
     NEW_PW_NOT_MATCH: 'new password not match',
     SEND_FCM_MESSAGE_ERR_MSG: 'fcm error',
     END_ROOM_ERROR_MSG: 'room already ended',
+    VERSION_MISMATCH: 'version mismatch',
     //Error codes
     SIGNIN_ERROR_CODE: 1,
     LOCAL_STRATEGY_ERROR_CODE: 2,
@@ -125,6 +126,7 @@ export const consts = {
     VALIDATION_ERROR_CODE: 49,
     SEND_FCM_MESSAGE_ERR_CODE: 50,
     ALREADY_OCCUPIED_ERROR_CODE: 51,
-    CHECK_REVIEWED_ERROR_CODE: 52,
+    FIND_ROOM_BY_ID_ERROR_CODE: 52,
     END_ROOM_ERROR_CODE: 53,
+    UPDATE_ROOM_OCCUPIED_ERROR_CODE: 54,
 }

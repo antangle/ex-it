@@ -5,7 +5,7 @@ import { RedisService } from './../redis/redis.service';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { Status } from 'src/consts/enum';
 import { JoinRoomDto } from './dto/join.dto';
-import { RoomIdDto } from './dto/room.dto';
+import { RoomIdDto, makeReviewDto } from './dto/room.dto';
 import { BaseOKResponseWithTokens } from 'src/response/response.dto';
 import { UserInfoDto } from './dto/user-info.dto';
 import { UpdateRoomDto } from './dto/update-room.dto';
@@ -19,7 +19,7 @@ import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Connection } from 'typeorm';
 import { Body, Controller, Get, Post, HttpStatus, Inject, Logger, Version } from '@nestjs/common';
 import { RoomService } from './room.service';
-import { SetCode, SetJwtAuth, makeApiResponse, ApiResponses } from 'src/functions/util.functions';
+import { SetCode, SetJwtAuth, makeApiResponse, ApiResponses, reviewMapperArray } from 'src/functions/util.functions';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
 import { ApiAcceptedResponse, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
@@ -178,7 +178,7 @@ export class RoomController {
   ){
     const queryRunner: QueryRunner = this.connection.createQueryRunner();
     const roomId = userInfoDto.room_id;
-    try{ 
+    try{
       await queryRunner.connect();
       await queryRunner.startTransaction();
 
@@ -219,7 +219,6 @@ export class RoomController {
     return makeApiResponse(HttpStatus.OK, {...roomData, reviews, tokens});
   }
 
-
   @ApiOperation({
     summary: '방 종료',
     description: `
@@ -246,45 +245,39 @@ export class RoomController {
       const userId = user.id;
       const roomId = roomEndDto.room_id;
 
-
       const {roomname, peerId, nickname, status} = roomEndDto;
-
+      //해당 peerId 리스트에서 제거
       await this.redisService.removeRoomPeerCache({roomname, peerId, nickname, status})
+      const updateRoomDto: UpdateRoomDto = {
+        is_occupied: null,
+        is_online: roomEndDto.continue
+      }
 
       if(roomEndDto.status == Status.HOST){
-        const updateRoomDto: UpdateRoomDto = {
-          is_occupied: null,
-          is_online: roomEndDto.continue
-        }
         if(!roomEndDto.continue){
           await this.redisService.removeRoomKey(roomEndDto.roomname)          
         }
-        await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
       }
-      else if(roomEndDto.status == Status.SPEAKER){
-        const updateRoomDto: UpdateRoomDto = {
-          is_occupied: null,
-        }
+      if(roomEndDto.status != Status.GUEST){
         await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
-        /* await this.redisService.removeRoomSpeakerCache(roomId); */
       }
 
-      let fellowStatus = roomEndDto.status == Status.HOST? Status.SPEAKER : Status.HOST;
+      /* let fellowStatus = roomEndDto.status == Status.HOST? Status.SPEAKER : Status.HOST;
       const fellowId = await this.roomService.getUserIdFromStatus(roomId, fellowStatus, queryRunner);
 
-      if(roomEndDto.status == Status.GUEST || roomEndDto.review_id > consts.NO_REVIEW_NUMBER){
-        roomEndDto.review_id = consts.NO_REVIEW_NUMBER;
-      }
-      if(fellowId){
+      //host speaker 둘다 있고, GUEST가 아니며, 통화를 한 상태 -> 리뷰 생성
+      // 리뷰가 생성되면 해당 방은 search에서 보이지 않음.
+      if(fellowId && roomEndDto.call_time > 0 && roomEndDto.status != Status.GUEST){
         //get fellow id from roomJoin
         const review = this.roomService.makeReview(roomEndDto, fellowId);
         await this.roomService.createReview(review, queryRunner);
-      }
+      } */
 
       //update room_join tables
       const updateRoomJoinDto: UpdateRoomJoinDto = {
         total_time: roomEndDto.total_time,
-        call_time: roomEndDto.call_time
+        call_time: roomEndDto.call_time,
+        out: false
       }
 
       await this.roomService.updateRoomJoin(userId, roomId, roomEndDto.status, updateRoomJoinDto, queryRunner);
@@ -297,6 +290,36 @@ export class RoomController {
     } finally {
       await queryRunner.release();
     }
+  }
+
+  @ApiOperation({
+    summary: 'make review',
+    description: '통화가 끝난 이후 방이 꺼질 때 리뷰 생성',
+  })
+  @ApiResponses(BaseOKResponseWithTokens)
+  @ApiBody({
+    type: makeReviewDto
+  })
+  @SetJwtAuth()
+  @SetCode(213)
+  @Post('review')
+  async makeReview(
+    @Body() makeReviewDto: makeReviewDto,
+    @AuthToken() tokens: Tokens,
+  ){
+    const roomId = makeReviewDto.room_id;
+    let fellowStatus = makeReviewDto.status == Status.HOST? Status.SPEAKER : Status.HOST;
+    const fellowId = await this.roomService.getUserIdFromStatus(roomId, fellowStatus);
+
+    //host speaker 둘다 있고, GUEST가 아니며, 통화를 한 상태 -> 리뷰 생성
+    // * 리뷰가 생성되면 해당 방은 search에서 보이지 않음.
+    if(fellowId && makeReviewDto.call_time > 0 && makeReviewDto.status != Status.GUEST){
+      //get fellow id from roomJoin
+      const review = this.roomService.makeReview(makeReviewDto, fellowId);
+      await this.roomService.createReview(review);
+    }
+
+    return makeApiResponse(HttpStatus.OK, {tokens});
   }
 
   @ApiOperation({
@@ -368,15 +391,15 @@ export class RoomController {
     const roomId = joinRoomDto.room_id;
     const status = joinRoomDto.status;
     const queryRunner = this.connection.createQueryRunner();
-    
-    const isReviewed = await this.roomService.checkReviewed(roomId);
-    if(isReviewed) throw new EndRoomException(consts.END_ROOM_ERROR_MSG, consts.END_ROOM_ERROR_CODE)
+
+    const room = await this.roomService.findRoomById(roomId);
+    if(!room.is_online) throw new EndRoomException(consts.END_ROOM_ERROR_MSG, consts.END_ROOM_ERROR_CODE)
 
     if(status == Status.SPEAKER){
-      const isOccupied = await this.roomService.checkOccupied(roomId);
+      const isOccupied = (room.is_occupied )? true : false || !room.is_online;
       //if other speaker already joined in room.
       if(isOccupied) throw new OccupiedException(consts.ALREADY_OCCUPIED, consts.ALREADY_OCCUPIED_ERROR_CODE);
-        await this.redisService.setRoomSpeakerCache(roomId, user.id); 
+      /* await this.redisService.setRoomSpeakerCache(roomId, user.id);  */
     }
 
     try{
@@ -390,11 +413,12 @@ export class RoomController {
         const updateRoomDto: UpdateRoomDto = {
           is_occupied: new Date()
         };
-        await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
-        const cachedUserId = await this.redisService.getRoomSpeakerCache(roomId);
+        await this.roomService.updateRoomOccupiedLock(roomId, joinRoomDto.version, updateRoomDto, queryRunner);
+
+/*         const cachedUserId = await this.redisService.getRoomSpeakerCache(roomId);
         if(cachedUserId){
           if(cachedUserId != user.id) throw new OccupiedException(consts.ALREADY_OCCUPIED, consts.ALREADY_OCCUPIED_ERROR_CODE);
-        }
+        } */
       }
 
       await queryRunner.commitTransaction();
@@ -406,7 +430,6 @@ export class RoomController {
       await queryRunner.release();
     }
   }
-
 
   @ApiOperation({
     summary: 'peer 확인',

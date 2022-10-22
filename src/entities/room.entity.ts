@@ -64,7 +64,8 @@ export class Room {
   
   @ApiHideProperty()
   @VersionColumn({
-    default: 0
+    default: 0,
+    nullable: true
   })
   version?: number;
 

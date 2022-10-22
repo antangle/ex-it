@@ -1,3 +1,4 @@
+import { VersionMismatchError } from './../../exception/version.exception';
 import { RedisService } from './../redis/redis.service';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { SearchRoomDto } from './dto/search-room.dto';
@@ -16,7 +17,7 @@ import { UserRepository } from './../user/user.repository';
 import { User } from './../../entities/user.entity';
 import { UnhandledException } from './../../exception/unhandled.exception';
 import { DatabaseException } from './../../exception/database.exception';
-import { Repository, InsertResult, TypeORMError } from 'typeorm';
+import { Repository, InsertResult, TypeORMError, OptimisticLockVersionMismatchError } from 'typeorm';
 import { Tag } from './../../entities/tag.entity';
 import { QueryRunner } from 'typeorm';
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -24,6 +25,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { consts } from 'src/consts/consts';
 import { Room } from 'src/entities/room.entity';
 import { CustomError } from 'src/exception/custom.exception';
+import { error } from 'console';
 
 @Injectable()
 export class RoomService {
@@ -125,7 +127,8 @@ export class RoomService {
         return {
             room: room,
             user: user,
-            status: status
+            status: status,
+            out: false
         }; 
     }
 
@@ -198,7 +201,7 @@ export class RoomService {
                 .execute();
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.JOIN_ROOM_ERROR_CODE, err);
-            else throw new UnhandledException(this.getMainTags.name, consts.JOIN_ROOM_ERROR_CODE, err);
+            else throw new UnhandledException(this.joinRoom.name, consts.JOIN_ROOM_ERROR_CODE, err);
         }
     }
 
@@ -221,6 +224,7 @@ export class RoomService {
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
             const updateResult = await roomJoinRepository.updateTime(userId, roomId, status, updateRoomJoinDto);
+            console.log(updateResult)
 //            if(updateResult.affected == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.UPDATE_ROOM_JOIN_ERROR_CODE);
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_JOIN_ERROR_CODE, err);
@@ -271,6 +275,26 @@ export class RoomService {
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_ONLINE_ERROR_CODE, err);
             else throw new UnhandledException(this.updateRoomOnline.name, consts.UPDATE_ROOM_ONLINE_ERROR_CODE, err);
+        }
+    }
+    
+    async updateRoomOccupiedLock(roomId: number, version: number, updateRoomDto: UpdateRoomDto, queryRunner?: QueryRunner){
+        const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
+        try{
+            const room = await this.roomRepository.findOne({
+                where: {
+                  id: roomId
+                },
+                lock: {
+                  mode: 'optimistic',
+                  version: version
+                }
+            })
+            const temp = await roomRepository.update(roomId, updateRoomDto)
+        } catch(err){
+            if(err instanceof OptimisticLockVersionMismatchError) throw new VersionMismatchError(consts.VERSION_MISMATCH, consts.UPDATE_ROOM_OCCUPIED_ERROR_CODE, err)
+            else if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_OCCUPIED_ERROR_CODE, err);
+            else throw new UnhandledException(this.updateRoomOccupiedLock.name, consts.UPDATE_ROOM_OCCUPIED_ERROR_CODE, err);
         }
     }
 
@@ -334,15 +358,15 @@ export class RoomService {
     async checkOccupied(roomId: number, queryRunner?: QueryRunner){
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
-            const speakerCache = await this.redisService.getRoomSpeakerCache(roomId);
+            /* const speakerCache = await this.redisService.getRoomSpeakerCache(roomId);
             let isOccupied: boolean;
             if(speakerCache){
                 isOccupied = true;
-            } else{
-                const room = await roomRepository.findOne(roomId);
-                if(!room) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.CHECK_OCCUPIED_ERROR_CODE);
-                isOccupied = (room.is_occupied )? true : false || !room.is_online;;
-            }
+            } else{ */
+            const room = await roomRepository.findOne(roomId);
+            if(!room) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.CHECK_OCCUPIED_ERROR_CODE);
+            const isOccupied = (room.is_occupied )? true : false || !room.is_online;
+        
             return isOccupied;
             
         } catch(err){
@@ -351,16 +375,16 @@ export class RoomService {
         }
     }
 
-    async checkReviewed(roomId: number, queryRunner?: QueryRunner){
-        const reviewRepository = queryRunner ? queryRunner.manager.getRepository(Review) : this.reviewRepository;
+    async findRoomById(roomId: number, queryRunner?: QueryRunner){
+        const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
-            const review = await reviewRepository.findOne({
-                where: { roomId: roomId }
-            })
-            return review ? true : false;
+            const room = await roomRepository.findOne({
+                where: { id: roomId }
+            });
+            return room;
         } catch(err){
-            if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.CHECK_REVIEWED_ERROR_CODE, err);
-            else throw new UnhandledException(this.checkReviewed.name, consts.CHECK_REVIEWED_ERROR_CODE, err);
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.FIND_ROOM_BY_ID_ERROR_CODE, err);
+            else throw new UnhandledException(this.findRoomById.name, consts.FIND_ROOM_BY_ID_ERROR_CODE, err);
         }
     }
 

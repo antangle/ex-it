@@ -26,13 +26,14 @@ export class TestController {
     @Post('lock')
     @SetCode(900)
     async lock(@Request() req, @Body('room_id') roomId: number){
+      console.log(roomId)
       const room = await this.roomRepository.findOne({
         where: {
           id: roomId
         },
         lock: {
           mode: 'optimistic',
-          version: 0
+          version: 7
         }
       })
       return room;

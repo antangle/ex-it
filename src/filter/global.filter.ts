@@ -1,3 +1,4 @@
+import { VersionMismatchError } from './../exception/version.exception';
 import { EndRoomException } from './../exception/occupied.exception';
 import { FirebaseException } from './../exception/firebase.exception';
 import { ApiResult } from './../types/user.d';
@@ -34,8 +35,7 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
     let msg: string;
 
     if(exception instanceof CustomError){
-      this.logger.warn(`errorCode: ${code}${exception.code}`)
-      this.logger.warn(JSON.stringify(exception));
+      this.logger.warn(`errorCode: ${code}${exception.code} \n ${exception.data}`)
       if(exception.message) msg = exception.message;
     }
     else if(exception instanceof BadRequestException){
@@ -103,6 +103,10 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
       case EndRoomException:
         if(!msg) msg = consts.END_ROOM_ERROR_MSG;
         apiResponse = makeApiResponse(HttpStatus.FORBIDDEN, null, msg)
+        break;
+      case VersionMismatchError:
+        if(!msg) msg = consts.VERSION_MISMATCH;
+        apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, msg)
         break;
       default:
         if(!msg) msg = consts.SERVER_ERROR;

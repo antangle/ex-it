@@ -35,4 +35,10 @@ export class RoomJoin {
 
     @CreateDateColumn({type: 'timestamptz'})
     created_at?: Date;
+
+    @Column({
+        default: false,
+        nullable: true
+    })
+    out?: boolean;
 }

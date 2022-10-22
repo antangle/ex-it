@@ -26,7 +26,8 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
             .update()
             .set({
                 total_time: () => 'total_time + :total_time',
-                call_time: () => 'call_time + :call_time'
+                call_time: () => 'call_time + :call_time',
+                out: () => `${updateRoomJoinDto.out}`
             })
             .where('status = :status', {status: status})
             .andWhere('userId = :userId', {userId: userId})

@@ -19,5 +19,16 @@ export class JoinRoomDto {
     @IsNumber()
     room_id: number;
 
+    @ApiProperty({
+        description: '해당 방의 version'
+    })
+    @Transform(({value}) => {
+        return isNaN(value) ? value : parseInt(value);
+    })
+    @IsNumber()
+    version: number;
+
+
+
     
 }

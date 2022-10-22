@@ -1,10 +1,9 @@
+import { Status } from 'src/consts/enum';
 import { Review } from './../../entities/review.entity';
 import { SearchRoomDto } from './dto/search-room.dto';
 import { Ban } from './../../entities/ban.entity';
-import { User } from 'src/entities/user.entity';
 import { RoomJoin } from './../../entities/roomJoin.entity';
 import { RoomTag } from './../../entities/roomTag.entity';
-import { Tag } from './../../entities/tag.entity';
 import { Repository } from 'typeorm';
 import { EntityRepository } from 'typeorm';
 import { Room } from '../../entities/room.entity'
@@ -13,7 +12,7 @@ import { consts } from 'src/consts/consts';
 @EntityRepository(Room)
 export class RoomRepository extends Repository<Room> {
     async getAllRoomsPaged(page: number = 0, take: number = consts.PAGINATION_TAKE){
-        const status = [consts.HOST, consts.SPEAKER];
+        const status = [Status.HOST, Status.SPEAKER];
         return await this.createQueryBuilder('room')
             .select([
                 'room.id', 
@@ -49,11 +48,10 @@ export class RoomRepository extends Repository<Room> {
         userId: number, 
         searchRoomDto: SearchRoomDto
     ){
-        
         const {tag, title, take, page} = searchRoomDto;
-        const status = consts.GUEST;
+        const status = Status.GUEST;
         let query = await this.createQueryBuilder('room')
-            .distinct(true) 
+            .distinct(true)
             .select([
                 'room.id', 
                 'room.hardcore AS hardcore', 
@@ -65,7 +63,7 @@ export class RoomRepository extends Repository<Room> {
             ])
             .addSelect('CASE WHEN room.is_occupied IS NOT NULL THEN True ELSE False END', 'is_occupied')
             .addSelect('tag_array.tags, tag_array.tagIds')
-            .addSelect('COALESCE(guest.guest_count::INTEGER, 0) AS guest_count')
+            .addSelect('COALESCE(guests.guest_count::INTEGER, 0) AS guest_count')
             .where('room.is_online = true')
             .andWhere('room.title LIKE :title', {title: `%${title}%`})
             //ban list
@@ -96,11 +94,12 @@ export class RoomRepository extends Repository<Room> {
                     .groupBy('room_tag.roomId')
             }, 'tag_array', 'tag_array.roomId = room.id')
             .leftJoin((qb) => {
-                return qb.select('room_join.roomId AS roomId, COUNT(room_join.status) AS guest_count')
+                return qb.select('room_join.roomId AS roomId, COUNT(room_join.roomId) AS guest_count')
                     .from(RoomJoin, 'room_join')
                     .where('room_join.status = :status')
+                    .andWhere('room_join.out = :out', {out: false})
                     .groupBy('room_join.roomId')
-                }, 'guest', 'guest.roomId = room.id')
+                }, 'guests', 'guests.roomId = room.id')
             .setParameter('status', status)
             .innerJoin('room_tag.tag', 'tag')
             .orderBy('room.created_at', 'DESC')
@@ -109,13 +108,12 @@ export class RoomRepository extends Repository<Room> {
                 .andWhere('tag.name = :tag')
                 .setParameter('tag', tag);
         }
-        
+
         query = query
             .offset(take*page)
             .limit(take)
-        
-        return await query.getRawMany();
 
+        return await query.getRawMany();
     }
 
     async guestCount(roomId: number){
