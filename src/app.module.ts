@@ -13,6 +13,8 @@ import { ProfileModule } from './module/profile/profile.module';
 import { RoomModule } from './module/room/room.module';
 import { ChatModule } from './chat/chat.module';
 import { utilities as nestWinstonModuleUtilities, WinstonModule } from 'nest-winston';
+import { PrometheusModule } from './module/prometheus/prometheus.module';
+import { MetricsModule } from './module/metrics/metrics.module';
 import * as winston from 'winston';
 
 @Module({
@@ -52,7 +54,9 @@ import * as winston from 'winston';
     UtilModule,
     ProfileModule,
     ChatModule,
-    MyScheduleModule
+    MyScheduleModule,
+    PrometheusModule,
+    MetricsModule
   ],
   controllers: [AppController],
   providers: [
