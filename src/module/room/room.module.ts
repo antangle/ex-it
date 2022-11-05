@@ -1,3 +1,4 @@
+import { DataLoggingService } from './../../logger/logger.service';
 import { MyRedisModule } from './../redis/redis.module';
 import { Ban } from './../../entities/ban.entity';
 import { Review } from './../../entities/review.entity';
@@ -32,6 +33,9 @@ import { RoomJoinRepository } from './room-join.repository';
     MyRedisModule
   ],
   controllers: [RoomController],
-  providers: [RoomService]
+  providers: [
+    RoomService,
+    DataLoggingService
+  ]
 })
 export class RoomModule {}

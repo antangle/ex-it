@@ -4,7 +4,7 @@ import { PeerJoinDto, PeerConnectedDto } from './dto/peer-join.dto';
 import { SocketValidationPipe } from './../validation/websocket.validation';
 import { WebsocketLoggingInterceptor } from './../interceptor/websocket.interceptor';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-import { Inject, LoggerService, UseInterceptors, HttpStatus, Logger } from '@nestjs/common';
+import { Inject, UseInterceptors, Logger } from '@nestjs/common';
 import { JoinedDto } from './dto/joined.dto';
 import { JoinDto } from './dto/join.dto';
 import { CreateMessageDto } from './dto/create-message.dto';
@@ -23,7 +23,7 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
 })
 @UseInterceptors(WebsocketLoggingInterceptor)
 @WebSocketGateway({
-  transports: ['websocket', 'polling'], 
+  transports: ['websocket', 'polling'],
   allowEIO3: true 
 })export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect{
   constructor(
@@ -31,17 +31,16 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
     @Inject(WINSTON_MODULE_NEST_PROVIDER)
     private readonly logger: Logger,
     private readonly redisService: RedisService,
-
   ) {}
   
   @WebSocketServer() server: Server;
 
   handleConnection(): void {
-    this.logger.log('!connected!', Date.now());
+    this.logger.verbose('!connected!', Date.now());
   }
 
   handleDisconnect(): void {
-    this.logger.log('!disonnected!', Date.now());
+    this.logger.verbose('!disonnected!', Date.now());
   }
 
   //coming from peer.open()
@@ -71,7 +70,7 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
   async sendPeerId(
       @ConnectedSocket() socket: Socket, 
       @MessageBody(new SocketValidationPipe()) data: PeerJoinDto,
-  ) {
+  ){
     await socket.join(data.roomname);
     await this.redisService.setRoomPeerCache(data);
     const payload: PeerConnectedDto = {
@@ -79,7 +78,7 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
       nickname: data.nickname
     }
     socket.to(data.roomname).emit('peer-connected', payload);
-  } 
+  }
 
   @AsyncApiSub({
     channel: 'join',

@@ -59,6 +59,12 @@ abstract class SearchResponseData {
         description: '현재 이 방에 들어왔던 모든 게스트 카운트.'
     })
     guest_count: number;
+
+    @ApiProperty({
+        default: 2,
+        description: '해당 데이터베이스 Room 테이블 버전넘버'
+    })
+    version: number;
 }
 
 export abstract class SearchRoomResponse extends BaseOKResponseWithTokens{

@@ -1,15 +1,16 @@
+import { DataLoggingService } from './../../logger/logger.service';
 import { RoomRepository } from './../room/room.repository';
 import { FcmService } from './../fcm/fcm.service';
-import { BadRequestCustomException } from './../../exception/bad-request.exception';
 import { RedisService } from './../redis/redis.service';
 import { CreateAuthDto } from './../auth/dto/create-auth.dto';
 import { User } from 'src/entities/user.entity';
 import { Connection } from 'typeorm';
 import { AuthService } from '../auth/auth.service';
 import { UtilService } from '../util/util.service';
-import { Controller, Get, Post, Body, Delete, Request, UseInterceptors } from '@nestjs/common';
+import { Controller, Get, Post, Body, Delete, Request, Inject } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import { makeApiResponse, SetCode } from 'src/functions/util.functions';
+import { SetCode } from 'src/functions/util.functions';
+import { WinstonLogger, WINSTON_MODULE_PROVIDER } from 'nest-winston';
 
 @Controller('test')
 @ApiTags('test')
@@ -21,12 +22,24 @@ export class TestController {
     private readonly connection: Connection,
     private readonly fcmService: FcmService,
     private readonly roomRepository: RoomRepository,
+    private readonly loggingService: DataLoggingService,
     ) {}
+
+    @Get('test')
+    async test(@Request() req, @Body('room_id') roomId: number){
+      const temp = {
+        keyword: ["test1", "test2", "test3"]
+      }
+      const s = JSON.stringify(temp);
+      this.loggingService.log(s);
+      this.loggingService.log(s, 'warn');
+      this.loggingService.log(s, 'info');
+      
+    }
 
     @Post('lock')
     @SetCode(900)
     async lock(@Request() req, @Body('room_id') roomId: number){
-      console.log(roomId)
       const room = await this.roomRepository.findOne({
         where: {
           id: roomId
@@ -38,8 +51,6 @@ export class TestController {
       })
       return room;
     }
-  
-
 
   @Post('time')
   @SetCode(900)

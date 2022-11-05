@@ -1,3 +1,4 @@
+import { DataLoggingService } from './../../logger/logger.service';
 import { RoomRepository } from './../room/room.repository';
 import { FcmModule } from './../fcm/fcm.module';
 import { AuthRepository } from 'src/module/auth/auth.repository';
@@ -22,7 +23,8 @@ import { TestController } from './test.controller';
   ],
   controllers: [TestController],
   providers: [
-    TestService
+    TestService,
+    DataLoggingService
   ]
 })
 export class TestModule {}

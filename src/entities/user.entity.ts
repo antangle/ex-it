@@ -62,11 +62,15 @@ export class User {
     // @Column()
     // name?: string;
     
-    // @Column()
-    // birth?: string;
+    @Column({
+        nullable: true
+    })
+    birth?: string;
     
-    // @Column()
-    // sex?: string;
+    @Column({
+        nullable: true
+    })
+    sex?: string;
     
     // @Column()
     // temp_uuid?: string;

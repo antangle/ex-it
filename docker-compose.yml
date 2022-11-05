@@ -18,9 +18,9 @@ services:
       - pgdata:/var/lib/postgresql/data
 
   exit_server:
-    # build:
-    #   context: .
-    #   dockerfile: Dockerfile.prod 
+    build:
+      context: .
+      dockerfile: Dockerfile.prod 
     image: antangle/exit_server:production
     depends_on:
       - pgdb
@@ -60,7 +60,26 @@ services:
     volumes: 
       - cache:/data
     restart: always
+
+  filebeat:
+    build:
+      context: ./filebeat
+    container_name: filebeat
+    hostname: exit-filebeat
+    environment:
+      - HOST_URL=${HOST_URL}
+      - LOGSTASH_URL=${LOGSTASH_URL}
+    user: root
+    command: filebeat -e -strict.perms=false
+    volumes: 
+      - ./filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - fbdata:/usr/share/filebeat/data/
+      - ./logs:/logs/host/
+    restart: always
+
 volumes:
   pgdata:
   cache:
+    driver: local
+  fbdata:
     driver: local

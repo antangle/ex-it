@@ -60,6 +60,7 @@ export class RoomRepository extends Repository<Room> {
                 'room.guest AS guest',    
                 'room.nickname AS nickname',
                 'room.roomname AS roomname',
+                'room.version AS version'
             ])
             .addSelect('CASE WHEN room.is_occupied IS NOT NULL THEN True ELSE False END', 'is_occupied')
             .addSelect('tag_array.tags, tag_array.tagIds')

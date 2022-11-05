@@ -1,3 +1,4 @@
+import { LoggerModule } from './logger/logger.module';
 import { MyScheduleModule } from './module/schedule/schedule.module';
 import { ConfigModule } from '@nestjs/config';
 import { CacheModule, Module } from '@nestjs/common';
@@ -12,8 +13,9 @@ import { UtilModule } from './module/util/util.module';
 import { ProfileModule } from './module/profile/profile.module';
 import { RoomModule } from './module/room/room.module';
 import { ChatModule } from './chat/chat.module';
-import { utilities as nestWinstonModuleUtilities, WinstonModule } from 'nest-winston';
+import { DashboardModule } from './module/dashboard/dashboard.module';
 import * as winston from 'winston';
+import { levels, passData } from './logger/logger';
 
 @Module({
   imports: [
@@ -21,27 +23,7 @@ import * as winston from 'winston';
       isGlobal: true,
       envFilePath: process.env.DEVMODE == 'dev' ? '.env.dev' : '.env'
     }),
-    WinstonModule.forRoot({
-      transports: [
-        new winston.transports.Console({
-          level: process.env.DEVMODE === 'dev' ? 'silly': 'info',
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            nestWinstonModuleUtilities.format.nestLike('Ex-it', { prettyPrint: true }),
-          ),
-        }),
-        new winston.transports.File({
-          filename: `ex_it-${new Date().toISOString().split('T')[0]}.log`,
-          dirname: 'logs',
-          level: 'info'
-        }),
-        new winston.transports.File({
-          filename: `ex_it-errors-${new Date().toISOString().split('T')[0]}.log`,
-          dirname: 'logs',
-          level: 'warn'
-        })
-      ],
-    }),
+    LoggerModule,
     CacheModule.register(),
     MyTypeormModule,
     UserModule,
@@ -52,7 +34,8 @@ import * as winston from 'winston';
     UtilModule,
     ProfileModule,
     ChatModule,
-    MyScheduleModule
+    MyScheduleModule,
+    DashboardModule
   ],
   controllers: [AppController],
   providers: [

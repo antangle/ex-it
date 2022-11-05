@@ -9,7 +9,7 @@ export class LoggingInterceptor implements NestInterceptor {
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         const { method, url, body } = context.getArgByIndex(0);
         
-        this.logger.log(`request ${method}, ${url}, ${JSON.stringify(body)}`)
+        this.logger.verbose(`request ${method}, ${url}, ${JSON.stringify(body)}`)
         return next
         .handle()
         .pipe(

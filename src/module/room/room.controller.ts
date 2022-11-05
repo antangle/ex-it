@@ -1,3 +1,4 @@
+import { DataLoggingService } from './../../logger/logger.service';
 import { EndRoomException } from './../../exception/occupied.exception';
 import { LeaveDto } from './../../chat/dto/leave.dto';
 import { FindPeerDto } from './dto/find-peer.dto';
@@ -33,6 +34,7 @@ import { OccupiedResponse } from './response/occupied.response';
 import { FindPeerResponse } from './response/find-peer.response';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { OccupiedException } from 'src/exception/occupied.exception';
+import { Room } from 'src/entities/room.entity';
 
 @ApiTags('room')
 @Controller('room')
@@ -41,6 +43,7 @@ export class RoomController {
     private readonly roomService: RoomService,
     private readonly redisService: RedisService,
     private connection: Connection,
+    private dataLoggingService: DataLoggingService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private logger: Logger
   ){}
 
@@ -106,7 +109,7 @@ export class RoomController {
       // make roomtags instance with tags
       // save room
       const room = await this.roomService.createRoom(roomDto, queryRunner);
-      const roomId = room.raw[0].id;
+      const roomId = room.id;
 
       // check custom tags
       const parsedCustomTags = this.roomService.parseCustomTags(customTags);
@@ -117,7 +120,7 @@ export class RoomController {
         customTagId.map(x => {
           tags.push(x.id)
         })
-      }
+      }   
 
       //remove overlapping tag ids
       const tagSet = new Set(tags);
@@ -130,7 +133,10 @@ export class RoomController {
       const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, createUser, Status.HOST);
       await this.roomService.joinRoom(roomJoinDto, queryRunner);
 
-      await queryRunner.commitTransaction();
+      await queryRunner.commitTransaction();   
+
+      this.dataLoggingService.room_create(user, room)
+      this.dataLoggingService.keyword(user, room, roomTags)
 
       return makeApiResponse(HttpStatus.OK, {roomname, tokens});
     } catch(err){
@@ -239,6 +245,7 @@ export class RoomController {
     @AuthToken() tokens: Tokens,
   ){
     const queryRunner: QueryRunner = this.connection.createQueryRunner();
+    console.log(roomEndDto)
     try{
       await queryRunner.connect();
       await queryRunner.startTransaction();
@@ -254,14 +261,21 @@ export class RoomController {
       }
 
       if(roomEndDto.status == Status.HOST){
+        delete updateRoomDto.is_occupied;
+        console.log(updateRoomDto)
         if(!roomEndDto.continue){
-          await this.redisService.removeRoomKey(roomEndDto.roomname)          
+          await this.redisService.removeRoomKey(roomEndDto.roomname)
+          await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
         }
       }
-      if(roomEndDto.status != Status.GUEST){
+      if(roomEndDto.status == Status.SPEAKER){
+        delete updateRoomDto.is_online;
+        console.log(updateRoomDto);
         await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
       }
-
+/*       if(roomEndDto.status != Status.GUEST){
+      }
+ */
       /* let fellowStatus = roomEndDto.status == Status.HOST? Status.SPEAKER : Status.HOST;
       const fellowId = await this.roomService.getUserIdFromStatus(roomId, fellowStatus, queryRunner);
 
@@ -282,6 +296,8 @@ export class RoomController {
 
       await this.roomService.updateRoomJoin(userId, roomId, roomEndDto.status, updateRoomJoinDto, queryRunner);
       await queryRunner.commitTransaction();
+
+      this.dataLoggingService.room_end(user, roomId, status);
 
       return makeApiResponse(HttpStatus.OK, {tokens});
     } catch(err){
@@ -420,7 +436,7 @@ export class RoomController {
           if(cachedUserId != user.id) throw new OccupiedException(consts.ALREADY_OCCUPIED, consts.ALREADY_OCCUPIED_ERROR_CODE);
         } */
       }
-
+      this.dataLoggingService.room_join(user, room, status);
       await queryRunner.commitTransaction();
       return makeApiResponse(HttpStatus.OK, {tokens});      
     } catch(err){

@@ -63,7 +63,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
         //set user, tokens
         request.user = this.utilService.makePayload(decoded, decoded.type);
         request.tokens = tokens;
-        this.logger.verbose(`current user: ${JSON.stringify(request.user)}`);
+        this.logger.log(`current user: ${JSON.stringify(request.user)}`);
         return true;
     }
 

@@ -14,6 +14,7 @@ import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import * as CryptoJS from 'crypto-js';
 import { consts } from 'src/consts/consts';
+import { format } from 'winston';
 
 @Injectable()
 export class UtilService {
@@ -47,6 +48,14 @@ export class UtilService {
 
     make4RandomDigit(): number{
         return Math.floor(1000 + Math.random() * 9000);
+    }
+
+    makeDataLogs(obj: Object): string {
+        let dataString: string = "";
+        for(var key in obj){
+            dataString += `${key}:${obj[key]}`
+        }
+        return dataString
     }
 
     makeSensBody(guestNumber: string, randomNumber: number){

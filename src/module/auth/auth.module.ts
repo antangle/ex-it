@@ -1,3 +1,4 @@
+import { DataLoggingService } from './../../logger/logger.service';
 import { MyRedisModule } from './../redis/redis.module';
 import { UtilModule } from '../util/util.module';
 import { AuthRepository } from './auth.repository';
@@ -34,7 +35,8 @@ import { UserRepository } from '../user/user.repository';
   providers: [
     AuthService,
     LocalStrategy,
-    JwtStrategy
+    JwtStrategy,
+    DataLoggingService
   ],
   exports: [AuthService, JwtModule]
 })

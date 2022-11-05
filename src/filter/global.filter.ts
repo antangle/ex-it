@@ -11,10 +11,10 @@ import { UnhandledException } from './../exception/unhandled.exception';
 import { DatabaseException, UserExistsException } from './../exception/database.exception';
 import { CustomError } from './../exception/custom.exception';
 import { OauthHttpException } from './../exception/axios.exception';
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus, BadRequestException, NotFoundException, LoggerService } from '@nestjs/common';
+import { Catch, ArgumentsHost, HttpStatus, BadRequestException, NotFoundException, LoggerService } from '@nestjs/common';
 import { Request, Response } from 'express';
-import { BaseExceptionFilter, Reflector } from '@nestjs/core';
-import { generateCode, makeApiResponse } from 'src/functions/util.functions';
+import { BaseExceptionFilter } from '@nestjs/core';
+import { makeApiResponse } from 'src/functions/util.functions';
 import { consts } from 'src/consts/consts';
 import { OccupiedException } from 'src/exception/occupied.exception';
 
@@ -34,17 +34,8 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
     let data: any;
     let msg: string;
 
-    if(exception instanceof CustomError){
-      this.logger.warn(`errorCode: ${code}${exception.code} \n ${exception.data}`)
-      if(exception.message) msg = exception.message;
-    }
-    else if(exception instanceof BadRequestException){
-      this.logger.warn(`${JSON.stringify(exception.getResponse())}`);
-    }
-    else{
-      this.logger.warn(`${exception.stack}`);
-    }
-    
+    if(exception.message) msg = exception.message;
+
     //for api response
     let apiResponse: ApiResult;
     switch(exception.constructor){
@@ -114,22 +105,24 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
         break;
     }
 
+    if(exception instanceof CustomError){
+      this.logger.warn(`errorCode: ${code}${exception.code} \n ${exception.data}`)
+    }
+    else{
+      this.logger.warn(`${exception.stack}`);
+    }
+
     //client request error
     if(apiResponse.code >= 400 && apiResponse.code < 500){
-  
       //log request
       const { method, url, body } = req;
       this.logger.warn(`req: ${method} | ${url} \nbody: ${JSON.stringify(body)}\nres: ${JSON.stringify(apiResponse)}`)
     } 
     //server error
     else{
-  
       //log request
       const { method, url, body } = req;
       this.logger.error(`req: ${method} | ${url} | \nbody: ${JSON.stringify(body)}\nres: ${JSON.stringify(apiResponse)}`)
-  
-      //log response
-      this.logger.error(`res: ${JSON.stringify(apiResponse)}`);
     }
 
     res.json(apiResponse);

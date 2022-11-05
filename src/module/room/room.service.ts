@@ -97,11 +97,11 @@ export class RoomService {
         }
     } */
 
-    async createRoom(createRoomDto: Room, queryRunner: QueryRunner): Promise<InsertResult>{
+    async createRoom(createRoomDto: Room, queryRunner: QueryRunner): Promise<Room>{
         const roomRepository = queryRunner.manager.getCustomRepository(RoomRepository);
         try{
             const room = await roomRepository.insert(createRoomDto);
-            return room;
+            return room.raw[0];
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.CREATE_ROOM_ERROR_CODE, err);
             else throw new UnhandledException(this.createRoom.name, consts.CREATE_ROOM_ERROR_CODE, err);
@@ -281,20 +281,18 @@ export class RoomService {
     async updateRoomOccupiedLock(roomId: number, version: number, updateRoomDto: UpdateRoomDto, queryRunner?: QueryRunner){
         const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
-            const room = await this.roomRepository.findOne({
-                where: {
-                  id: roomId
-                },
-                lock: {
-                  mode: 'optimistic',
-                  version: version
-                }
-            })
-            const temp = await roomRepository.update(roomId, updateRoomDto)
+            const temp = await roomRepository.createQueryBuilder()
+                .setLock("pessimistic_write")
+                .update(Room)
+                .where('id = :roomId', {roomId: roomId})
+                .set(updateRoomDto)
+                .returning("*")
+                .execute()
+            if(+temp.affected < 1) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.UPDATE_ROOM_OCCUPIED_ERROR_CODE)
+            if(temp.raw[0].version != version+1) throw new VersionMismatchError(consts.VERSION_MISMATCH, consts.UPDATE_ROOM_OCCUPIED_LOCK_ERROR_CODE)
         } catch(err){
-            if(err instanceof OptimisticLockVersionMismatchError) throw new VersionMismatchError(consts.VERSION_MISMATCH, consts.UPDATE_ROOM_OCCUPIED_ERROR_CODE, err)
-            else if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_OCCUPIED_ERROR_CODE, err);
-            else throw new UnhandledException(this.updateRoomOccupiedLock.name, consts.UPDATE_ROOM_OCCUPIED_ERROR_CODE, err);
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_OCCUPIED_LOCK_ERROR_CODE, err);
+            else throw err;
         }
     }
 

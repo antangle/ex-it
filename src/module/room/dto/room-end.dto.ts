@@ -1,6 +1,5 @@
 import { Status } from 'src/consts/enum';
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
 import { consts } from 'src/consts/consts';
 

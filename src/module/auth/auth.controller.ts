@@ -17,15 +17,16 @@ import { Body, Controller, Get, Post, Request, UseGuards, HttpStatus, Param, Que
 import { CreateUserDto } from 'src/module/user/dto/create-user.dto';
 import { consts } from 'src/consts/consts';
 import { ApiResponses, makeApiResponse, SetCode, SetJwtAuth } from 'src/functions/util.functions';
-import { ApiBody, ApiOperation, ApiQuery, ApiTags, ApiTooManyRequestsResponse } from '@nestjs/swagger';
+import { ApiBody, ApiOperation, ApiTags, ApiTooManyRequestsResponse } from '@nestjs/swagger';
 import { OAuthLoginDto } from './dto/oauth-login.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
-import { BaseOKResponse, BaseOKResponseWithTokens, InternalServerErrorResponse, UnauthorizedResponse, TokenData, TooManyRequestResponse } from 'src/response/response.dto';
+import { BaseOKResponse, BaseOKResponseWithTokens, TokenData, TooManyRequestResponse } from 'src/response/response.dto';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { CheckEmailResponse } from './response/auth.response';
 import { AuthToken, AuthUser } from 'src/decorator/decorators';
 import { VerifyResponse } from './response/verify.response';
 import { LoginResponse } from './response/login.response';
+import { DataLoggingService } from 'src/logger/logger.service';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -36,7 +37,8 @@ export class AuthController {
         private redisService: RedisService,
         private userService: UserService,
         private utilService: UtilService,
-        private connection: Connection
+        private connection: Connection,
+        private readonly dataLoggingService: DataLoggingService,
     ){}
 
     @Post('login')
@@ -50,8 +52,10 @@ export class AuthController {
     @ApiResponses(LoginResponse)
     @UseGuards(LocalAuthGuard)
     @SetCode(101)
-    async login(@AuthUser() user: AuthorizedUser){
+    async login(@AuthUser() user: AuthorizedUser){        
         const tokens = await this.authService.signIn(user);
+        //log data at the end of api
+        this.dataLoggingService.login(user);
         return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
     }
 
@@ -83,7 +87,8 @@ export class AuthController {
                 }
                 await this.authService.updateOAuthRefreshToken(user.email, user.type, updateAuthDto, queryRunner);
             }
-
+            //log data at the end of api
+            this.dataLoggingService.logout(user);
             await queryRunner.commitTransaction();
             return makeApiResponse(HttpStatus.OK);
         } catch(err){
@@ -104,6 +109,7 @@ export class AuthController {
     @SetCode(103)
     @Post('oauth_login')
     async oauthLogin(@Body() oauthLoginDto: OAuthLoginDto){
+        
         //authentication with access_token
         // await this.authService.validateOAuthAccessToken(oauthLoginDto.oauth_access_token, oauthLoginDto.type);
 
@@ -125,6 +131,9 @@ export class AuthController {
             const tokens = await this.authService.signIn(user, oauthLoginDto.type);
 
             await queryRunner.commitTransaction();
+
+            //log data at the end of api
+            this.dataLoggingService.login(user, oauthLoginDto.type);
             return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
         } catch(err){
             await queryRunner.rollbackTransaction();
@@ -209,6 +218,8 @@ export class AuthController {
             const user = await this.userService.createUser(createUserDto, queryRunner);
             const tokens = await this.authService.signIn(user, consts.LOCAL, queryRunner);
 
+            //log data at the end of api
+            this.dataLoggingService.signin(user);
             await queryRunner.commitTransaction();
             return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
         } catch(err){
@@ -277,6 +288,10 @@ export class AuthController {
             const auth = await this.authService.createAuth(authCreateDto, queryRunner);
             user.auth = [auth];
             const tokens = await this.authService.signIn(user, type, queryRunner);
+
+            //log data at the end of api
+            this.dataLoggingService.signin(user, type);
+
             await queryRunner.commitTransaction();
             return makeApiResponse(HttpStatus.OK, {tokens, nickname: nickname});
         } catch(err){
@@ -307,6 +322,7 @@ export class AuthController {
             await this.authService.quit(userId, queryRunner);
             await queryRunner.commitTransaction();
 
+            this.dataLoggingService.quit(user);
             return makeApiResponse(HttpStatus.OK);
         } catch(err){
             await queryRunner.rollbackTransaction();

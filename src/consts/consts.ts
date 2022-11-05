@@ -8,6 +8,10 @@ export const consts = {
     GUEST: 'GUEST',
     HOST: 'HOST',
     NO_REVIEW_NUMBER: 5,
+
+    //logging
+    DATA: 'data',
+
     //peer
     ROOM_CACHE_TTL: 3600*24,
 
@@ -129,4 +133,5 @@ export const consts = {
     FIND_ROOM_BY_ID_ERROR_CODE: 52,
     END_ROOM_ERROR_CODE: 53,
     UPDATE_ROOM_OCCUPIED_ERROR_CODE: 54,
+    UPDATE_ROOM_OCCUPIED_LOCK_ERROR_CODE: 54,
 }
