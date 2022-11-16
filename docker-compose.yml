@@ -67,7 +67,6 @@ services:
     container_name: filebeat
     hostname: exit-filebeat
     environment:
-      - HOST_URL=${HOST_URL}
       - LOGSTASH_URL=${LOGSTASH_URL}
     user: root
     command: filebeat -e -strict.perms=false
