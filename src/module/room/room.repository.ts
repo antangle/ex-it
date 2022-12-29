@@ -67,6 +67,7 @@ export class RoomRepository extends Repository<Room> {
             .addSelect('COALESCE(guests.guest_count::INTEGER, 0) AS guest_count')
             .where('room.is_online = true')
             .andWhere('room.title LIKE :title', {title: `%${title}%`})
+            .andWhere('room.created_at >= now() - INTERVAL \'1 day\'')
             //ban list
             .andWhere((qb) => {
                 const subQuery = qb.subQuery()

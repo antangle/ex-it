@@ -1,5 +1,5 @@
-let localVideo = document.getElementById("local-audio")
-let remoteVideo = document.getElementById("remote-audio")
+let localVideo = document.getElementById("local-video")
+let remoteVideo = document.getElementById("remote-video")
 
 localVideo.style.opacity = 0
 remoteVideo.style.opacity = 0
@@ -10,7 +10,7 @@ remoteVideo.onplaying = () => { remoteVideo.style.opacity = 1 }
 let peer
 function init(userId) {
     peer = new Peer(userId)
-
+    
     peer.on('open', () => {
         Android.onPeerConnected()
     })
@@ -22,20 +22,12 @@ let audioConstraints;
 if (window.chrome) {
     audioConstraints = {
         mandatory: {
-            volume: 100,
-            latency: 0.003,
-            echoCancellation: true,
-            noiseSuppression: true,
-            autoGainControl: true
+            echoCancellation: true
         }
     }
 } else {
     audioConstraints = {
-        volume: 100,
-        latency: 0.003,
-        echoCancellation: true,
-        noiseSuppression: true,
-        autoGainControl: true
+        echoCancellation: true
     }
 }
 let localStream
@@ -47,7 +39,7 @@ function listen() {
             audioConstraints: audioConstraints
         }, (stream) => {
             if(!localStream) localStream = stream
-
+            
             call.answer()
             call.on('stream', (remoteStream) => {
                 const userType = call.metadata.type;
@@ -61,6 +53,8 @@ function listen() {
                 else if (userType == 'SPEAKER'){
                     remoteVideo.srcObject = remoteStream
                 }
+            }, err => {
+
             })
 
         })
@@ -86,30 +80,13 @@ function startCall(otherUserId, userType) {
     })
 }
 
-function toggleVideo(b) {
-    if (b == "true") {
-        localStream.getVideoTracks()[0].enabled = true
-    } else {
-        localStream.getVideoTracks()[0].enabled = false
-    }
-}
-
-function toggleAudio(b) {
-    console.log(localStream)
-    if (b == "true") {
-        localStream.getAudioTracks().forEach(track => track.enabled = true);
-    } else {
-        localStream.getAudioTracks().forEach(track => track.enabled = false);
-    }
-}
-
 function handlePeerDisconnect() {
     // manually close the peer connections
     for (let conns in peer.connections) {
         peer.connections[conns].forEach((conn, index, array) => {
         console.log(`closing ${conn.connectionId} peerConnection (${index + 1}/${array.length})`, conn.peerConnection);
         conn.peerConnection.close();
-
+  
         // close it using peerjs methods
         if (conn.close)
           conn.close();
@@ -123,12 +100,29 @@ function disableStreams(){
         const stream = videoElement.srcObject;
         if(stream != null){
             const tracks = stream.getTracks();
-
+        
             tracks.forEach(function(track) {
                 track.stop();
             });
-
-            videoElement.srcObject = null;
-        }
+        
+            videoElement.srcObject = null;        
+        }        
     })
+}
+
+function toggleVideo(b) {
+    if (b == "true") {
+        localStream.getVideoTracks()[0].enabled = true
+    } else {
+        localStream.getVideoTracks()[0].enabled = false
+    }
+} 
+
+function toggleAudio(b) {
+    console.log(JSON.stringify(localStream))
+    if (b == "true") {
+        localStream.getAudioTracks().forEach(track => track.enabled = true);
+    } else {
+        localStream.getAudioTracks().forEach(track => track.enabled = false);
+    }
 }

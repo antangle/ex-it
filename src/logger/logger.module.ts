@@ -4,6 +4,7 @@ import { DataLoggingService } from './logger.service';
 import { levels, passData } from './logger';
 import { utilities as nestWinstonModuleUtilities, WinstonModule } from 'nest-winston';
 import { consts } from 'src/consts/consts';
+import WinstonDailyRotate from 'winston-daily-rotate-file';
 @Module({
     imports: [
         WinstonModule.forRoot({
@@ -13,27 +14,34 @@ import { consts } from 'src/consts/consts';
                 level: process.env.DEVMODE === 'dev' ? consts.DATA: 'warn',
                 format: winston.format.combine(
                   winston.format.timestamp(),
-                  nestWinstonModuleUtilities.format.nestLike('Ex-it', { prettyPrint: true }),
+                  nestWinstonModuleUtilities.format.nestLike('Ex-it', { prettyPrint: process.env.DEVMODE === 'dev' ? true : false }),
                 ),
               }),
-              new winston.transports.File({
+              new WinstonDailyRotate({
                 level: 'warn',
-                filename: 'errors.log',
-                dirname: 'logs/error'
+                format: winston.format.printf(
+                  ({ level, message, timestamp }): string => {
+                    return `${timestamp} logLevel:${level} message:${message}`;
+                  }
+                ),
+                dirname: 'logs/error',
+                datePattern: "YYYY-MM-DD",
+                filename: "errors_%DATE%.log"
               }),
-              new winston.transports.File({
+              new WinstonDailyRotate({
                 level: consts.DATA,
                 format: winston.format.combine(
                   passData(),
                   winston.format.timestamp(),
                   winston.format.printf(
                     ({ level, message, timestamp }): string => {
-                      return `${timestamp} logLevel:${level} message:${message}`;
-                    }
+                      return `${timestamp} level: ${level} message: ${message}`;
+                      }
                   )
                 ),
-                filename: 'data.log',
-                dirname: 'logs'
+                dirname: 'logs',
+                datePattern: "YYYY-MM-DD",
+                filename: "data_%DATE%.log"
               }),
               /*new winston.transports.File({
                 filename: `ex_it-warn.log`,

@@ -1,3 +1,4 @@
+import { BadRequestCustomException } from './../../exception/bad-request.exception';
 import { VersionMismatchError } from './../../exception/version.exception';
 import { RedisService } from './../redis/redis.service';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
@@ -146,6 +147,19 @@ export class RoomService {
         }
     }
 
+    async getTagNames(tags: Set<number>, queryRunner?: QueryRunner){
+        const roomTagRepository = queryRunner ? queryRunner.manager.getRepository(RoomTag) : this.roomTagRepository;
+        try{
+            return await roomTagRepository.createQueryBuilder('room_tag')
+                .select('room_tag.name')
+                .where('room_tag.id IN (:...tags)', tags)
+                .getRawMany();
+        } catch(err){
+            if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);
+            else throw new UnhandledException(this.saveRoomTags.name, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);
+        }
+    }
+
     async createReview(review: Review, queryRunner?: QueryRunner){
         const reviewRepository = queryRunner ? queryRunner.manager.getRepository(Review) : this.reviewRepository;
         try{
@@ -224,7 +238,6 @@ export class RoomService {
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
             const updateResult = await roomJoinRepository.updateTime(userId, roomId, status, updateRoomJoinDto);
-            console.log(updateResult)
 //            if(updateResult.affected == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.UPDATE_ROOM_JOIN_ERROR_CODE);
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.UPDATE_FAILED, consts.UPDATE_ROOM_JOIN_ERROR_CODE, err);
@@ -258,7 +271,7 @@ export class RoomService {
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
             const roomjoins = await roomJoinRepository.getHostAndSpeaker(roomId);
-            if(roomjoins.length == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_HOST_AND_SPEAKER_ERROR_CODE);
+            if(!roomjoins || roomjoins.length == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_HOST_AND_SPEAKER_ERROR_CODE);
 
             return roomjoins;
         } catch(err){
@@ -318,6 +331,8 @@ export class RoomService {
         const userRepository = queryRunner ? queryRunner.manager.getCustomRepository(UserRepository) : this.userRepository;
         const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
         try{
+            if(!userId) throw new BadRequestCustomException('userId not exist', consts.GET_USER_INFO_ERROR_CODE)
+
             const userInfo = await userRepository.getProfileQuery(userId);
             if(!userInfo) return null;
 

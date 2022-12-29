@@ -1,13 +1,16 @@
+import { consts } from './../../consts/consts';
+import { TransactionQueryRunner } from './../../decorator/decorators';
+import { TransactionInterceptor } from './../../interceptor/transaction.interceptor';
 import { DataLoggingService } from './../../logger/logger.service';
 import { RoomRepository } from './../room/room.repository';
 import { FcmService } from './../fcm/fcm.service';
 import { RedisService } from './../redis/redis.service';
 import { CreateAuthDto } from './../auth/dto/create-auth.dto';
 import { User } from 'src/entities/user.entity';
-import { Connection } from 'typeorm';
+import { Connection, EntityManager, QueryRunner } from 'typeorm';
 import { AuthService } from '../auth/auth.service';
 import { UtilService } from '../util/util.service';
-import { Controller, Get, Post, Body, Delete, Request, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Body, Delete, Request, Inject, UseInterceptors } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { SetCode } from 'src/functions/util.functions';
 import { WinstonLogger, WINSTON_MODULE_PROVIDER } from 'nest-winston';
@@ -25,16 +28,36 @@ export class TestController {
     private readonly loggingService: DataLoggingService,
     ) {}
 
-    @Get('test')
+    @Get('test1')
     async test(@Request() req, @Body('room_id') roomId: number){
-      const temp = {
-        keyword: ["test1", "test2", "test3"]
+      const data = {
+        event_name: "test",
+        user_id: 0,
+        room_id: 0,
+        status: consts.HOST
+      };
+      return 1;
+    }
+
+    @Post('set')
+    async set(
+      @Body('roomname') roomname: string,
+      @Body('peer_id') peerId: string,
+      ){
+      const nickname = "nick"
+      const status = "GUEST"
+      const data = {
+        roomname, peerId, nickname, status
       }
-      const s = JSON.stringify(temp);
-      this.loggingService.log(s);
-      this.loggingService.log(s, 'warn');
-      this.loggingService.log(s, 'info');
-      
+      this.redisService.setRoomPeerCache(data)
+      return 1
+    }
+
+    @Post('get')
+    async get(
+      @Body('roomname') roomname: string,
+      ){
+      return this.redisService.getRoomPeerCache(roomname)
     }
 
     @Post('lock')
@@ -104,29 +127,21 @@ export class TestController {
     return loginDto;
   }
   
-  @Delete('')
+  @Get('')
   @SetCode(901)
-  async del(){
-    const queryRunner = this.connection.createQueryRunner();
-    try{
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-      const deleted = await queryRunner.manager.createQueryBuilder()
-        .delete()
-        .from(User)
-        .where('deleted_at IS NOT NULL')
-        .andWhere(`deleted_at < NOW() - INTERVAL '4 day'`)
-        .returning('*')
-        .execute()
-      await queryRunner.commitTransaction();
-      return deleted;
-    }
-    catch(err){
-      await queryRunner.rollbackTransaction();
-    } finally {
-      await queryRunner.release();
-    }
+  @UseInterceptors(TransactionInterceptor)
+  async transaction(
+    @TransactionQueryRunner() queryRunner: QueryRunner
+  ){
+    const temp = await queryRunner.manager.createQueryBuilder()
+      .select("*")
+      .from(User, 'user')
+      .where('user.id = 1')
+      .execute()
+    const temp2 = await queryRunner.manager.findOne(User, 2);
+    return temp;
   }
+
 
 /*   @Get('cache')
   async getCache(): Promise<string> {

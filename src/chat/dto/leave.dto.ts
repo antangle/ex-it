@@ -17,4 +17,7 @@ export class LeaveDto {
 export class LeavedDto {
     @IsString()
     nickname: string;
+
+    @IsString()
+    peerId: string;
 }

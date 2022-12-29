@@ -1,3 +1,4 @@
+import { TransactionInterceptor } from './../../interceptor/transaction.interceptor';
 import { CheckEmailDto } from './dto/check-email.dto';
 import { TooManyRequestException } from './../../exception/bad-request.exception';
 import { RedisService } from './../redis/redis.service';
@@ -7,7 +8,7 @@ import { OAuthSignInDto } from './dto/oauth-siginin.dto';
 import { ChangePwDto } from './dto/change-pw.dto';
 import { LocalLoginDto } from './dto/local-login.dto';
 import { UtilService } from '../util/util.service';
-import { Connection } from 'typeorm';
+import { Connection, QueryRunner } from 'typeorm';
 import { Auth } from '../../entities/auth.entity';
 import { UpdateUserDto } from '../user/dto/update-user.dto';
 import { UserService } from 'src/module/user/user.service';
@@ -23,10 +24,11 @@ import { UpdateAuthDto } from './dto/update-auth.dto';
 import { BaseOKResponse, BaseOKResponseWithTokens, TokenData, TooManyRequestResponse } from 'src/response/response.dto';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
 import { CheckEmailResponse } from './response/auth.response';
-import { AuthToken, AuthUser } from 'src/decorator/decorators';
+import { AuthToken, AuthUser, TransactionQueryRunner } from 'src/decorator/decorators';
 import { VerifyResponse } from './response/verify.response';
 import { LoginResponse } from './response/login.response';
 import { DataLoggingService } from 'src/logger/logger.service';
+import { UseInterceptors } from '@nestjs/common/decorators';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -64,40 +66,32 @@ export class AuthController {
         description: 'compatible to both user and oauth_user',
     })
     @ApiResponses(BaseOKResponse)
+    @UseInterceptors(TransactionInterceptor)
     @SetJwtAuth()
     @SetCode(102)
     @Post('logout')
-    async logout(@AuthUser() user: AuthorizedUser){
+    async logout(
+        @AuthUser() user: AuthorizedUser,
+        @TransactionQueryRunner() queryRunner: QueryRunner
+        ){
         //if user did oauth login
-        const queryRunner = this.connection.createQueryRunner();
-        try{
-            await queryRunner.connect();
-            await queryRunner.startTransaction();
-    
-            let userId = user.id;
-            const updateUserDto: UpdateUserDto = {
-                refresh_token: null
-            }
-
-            await this.userService.updateLocalRefreshToken(userId, updateUserDto, queryRunner);
-
-            if(user.type != consts.LOCAL){
-                const updateAuthDto: UpdateAuthDto = {
-                    oauth_refresh_token: null
-                }
-                await this.authService.updateOAuthRefreshToken(user.email, user.type, updateAuthDto, queryRunner);
-            }
-            //log data at the end of api
-            this.dataLoggingService.logout(user);
-            await queryRunner.commitTransaction();
-            return makeApiResponse(HttpStatus.OK);
-        } catch(err){
-            await queryRunner.rollbackTransaction();
-            throw(err);
+        
+        let userId = user.id;
+        const updateUserDto: UpdateUserDto = {
+            refresh_token: null
         }
-        finally{
-            await queryRunner.release();
+
+        await this.userService.updateLocalRefreshToken(userId, updateUserDto, queryRunner);
+
+        if(user.type != consts.LOCAL){
+            const updateAuthDto: UpdateAuthDto = {
+                oauth_refresh_token: null
+            }
+            await this.authService.updateOAuthRefreshToken(user.email, user.type, updateAuthDto, queryRunner);
         }
+        //log data at the end of api
+        this.dataLoggingService.logout(user);
+        return makeApiResponse(HttpStatus.OK);
     }
 
     @ApiOperation({
@@ -106,41 +100,33 @@ export class AuthController {
     })
     @ApiResponses(LoginResponse)
     @ApiBody({type: OAuthLoginDto})
+    @UseInterceptors(TransactionInterceptor)
     @SetCode(103)
     @Post('oauth_login')
-    async oauthLogin(@Body() oauthLoginDto: OAuthLoginDto){
+    async oauthLogin(
+        @Body() oauthLoginDto: OAuthLoginDto,
+        @TransactionQueryRunner() queryRunner: QueryRunner
+        ){
         
         //authentication with access_token
         // await this.authService.validateOAuthAccessToken(oauthLoginDto.oauth_access_token, oauthLoginDto.type);
 
         //if authenticated, login
-        const queryRunner = this.connection.createQueryRunner();
-        try{
-            await queryRunner.connect();
-            await queryRunner.startTransaction();
+    
+        const updateAuthDto: UpdateAuthDto = {
+            oauth_refresh_token: oauthLoginDto.oauth_refresh_token
+        };
+        const auth = await this.authService.updateOAuthRefreshToken(oauthLoginDto.email, oauthLoginDto.type, updateAuthDto, queryRunner);
+        const userId = auth[0].userId;
 
-            const updateAuthDto: UpdateAuthDto = {
-                oauth_refresh_token: oauthLoginDto.oauth_refresh_token
-            };
-            const auth = await this.authService.updateOAuthRefreshToken(oauthLoginDto.email, oauthLoginDto.type, updateAuthDto, queryRunner);
-            const userId = auth[0].userId;
+        let user = await this.userService.findUserById(userId, queryRunner);
+        user.auth = auth;
 
-            let user = await this.userService.findUserById(userId, queryRunner);
-            user.auth = auth;
+        const tokens = await this.authService.signIn(user, oauthLoginDto.type);
 
-            const tokens = await this.authService.signIn(user, oauthLoginDto.type);
-
-            await queryRunner.commitTransaction();
-
-            //log data at the end of api
-            this.dataLoggingService.login(user, oauthLoginDto.type);
-            return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
-        } catch(err){
-            await queryRunner.rollbackTransaction();
-            throw err;
-        } finally{
-            await queryRunner.release();
-        }
+        //log data at the end of api
+        this.dataLoggingService.login(user, oauthLoginDto.type);
+        return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
     }
 
     @ApiOperation({
@@ -203,31 +189,25 @@ export class AuthController {
         type: CreateUserDto
     })
     //local signin - 회원가입
+    @UseInterceptors(TransactionInterceptor)
     @SetCode(107)
     @Post('signin')
-    async signIn(@Body() createUserDto: CreateUserDto){
-        const queryRunner = this.connection.createQueryRunner();
-        try{
-            await queryRunner.connect();
-            await queryRunner.startTransaction();
-            createUserDto.nickname = await this.authService.getRandomNickname();
+    async signIn(
+        @Body() createUserDto: CreateUserDto,
+        @TransactionQueryRunner() queryRunner: QueryRunner
+        ){
+    
+        createUserDto.nickname = await this.authService.getRandomNickname();
 
-            //bcrypt hashing
-            createUserDto.password = await this.utilService.hashPassword(createUserDto.password);
+        //bcrypt hashing
+        createUserDto.password = await this.utilService.hashPassword(createUserDto.password);
 
-            const user = await this.userService.createUser(createUserDto, queryRunner);
-            const tokens = await this.authService.signIn(user, consts.LOCAL, queryRunner);
+        const user = await this.userService.createUser(createUserDto, queryRunner);
+        const tokens = await this.authService.signIn(user, consts.LOCAL, queryRunner);
 
-            //log data at the end of api
-            this.dataLoggingService.signin(user);
-            await queryRunner.commitTransaction();
-            return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
-        } catch(err){
-            await queryRunner.rollbackTransaction();
-            throw err;
-        } finally{
-            await queryRunner.release();
-        }
+        //log data at the end of api
+        this.dataLoggingService.signin(user);
+        return makeApiResponse(HttpStatus.OK, {tokens, nickname: user.nickname});
     }
 
 
@@ -240,9 +220,13 @@ export class AuthController {
         type: OAuthSignInDto
     })
     //social signin
+    @UseInterceptors(TransactionInterceptor)
     @SetCode(108)
     @Post('oauth_signin')
-    async oauthSignIn(@Body() oAuthSignInDto: OAuthSignInDto){
+    async oauthSignIn(
+        @Body() oAuthSignInDto: OAuthSignInDto,
+        @TransactionQueryRunner() queryRunner: QueryRunner
+        ){
         const {
             type, 
             oauth_access_token,
@@ -252,54 +236,42 @@ export class AuthController {
             oauth_refresh_token 
         } = oAuthSignInDto;
 
-        const queryRunner = this.connection.createQueryRunner();
+        
+        //check authentication with access token
+        //const isValid = await this.authService.validateOAuthAccessToken(oauth_access_token, type)
 
-        try{
-            await queryRunner.connect();
-            await queryRunner.startTransaction();
-            
-            //check authentication with access token
-            //const isValid = await this.authService.validateOAuthAccessToken(oauth_access_token, type)
-
-            //if authenticated, check user exists.
-            let user = await this.userService.findOneByEmailReturnNull(email, queryRunner);
-            
-            //if user does not exist, create that user.
-            if(!user) {
-                const createUserDto: CreateUserDto = {
-                    nickname: await this.authService.getRandomNickname(),
-                    email: email,
-                    terms: terms,
-                    personal_info_terms: personal_info_terms,
-                    is_authenticated: true //isValid
-                };
-                user = await this.userService.createUser(createUserDto, queryRunner);
-            }
-            const nickname = user.nickname;
-            //if user with that email already exists, just link
-            const authCreateDto: Auth = {
-                user: user,
+        //if authenticated, check user exists.
+        let user = await this.userService.findOneByEmailReturnNull(email, queryRunner);
+        
+        //if user does not exist, create that user.
+        if(!user) {
+            const createUserDto: CreateUserDto = {
+                nickname: await this.authService.getRandomNickname(),
                 email: email,
-                type: type,
-                oauth_refresh_token: oauth_refresh_token
-            }
-
-            //link user to auth
-            const auth = await this.authService.createAuth(authCreateDto, queryRunner);
-            user.auth = [auth];
-            const tokens = await this.authService.signIn(user, type, queryRunner);
-
-            //log data at the end of api
-            this.dataLoggingService.signin(user, type);
-
-            await queryRunner.commitTransaction();
-            return makeApiResponse(HttpStatus.OK, {tokens, nickname: nickname});
-        } catch(err){
-            await queryRunner.rollbackTransaction();
-            throw(err);
-        } finally{
-            await queryRunner.release();
+                terms: terms,
+                personal_info_terms: personal_info_terms,
+                is_authenticated: true //isValid
+            };
+            user = await this.userService.createUser(createUserDto, queryRunner);
         }
+        const nickname = user.nickname;
+        //if user with that email already exists, just link
+        const authCreateDto: Auth = {
+            user: user,
+            email: email,
+            type: type,
+            oauth_refresh_token: oauth_refresh_token
+        }
+
+        //link user to auth
+        const auth = await this.authService.createAuth(authCreateDto, queryRunner);
+        user.auth = [auth];
+        const tokens = await this.authService.signIn(user, type, queryRunner);
+
+        //log data at the end of api
+        this.dataLoggingService.signin(user, type);
+
+        return makeApiResponse(HttpStatus.OK, {tokens, nickname: nickname});
     }
 
     @ApiOperation({
@@ -307,29 +279,19 @@ export class AuthController {
         description: 'soft delete 회원탈퇴. 5일후에 자동으로 서버에서 삭제됨',
     })
     @ApiResponses(BaseOKResponse)
+    @UseInterceptors(TransactionInterceptor)
     @SetJwtAuth()
     @SetCode(109)
     @Post('quit')
     async quit(
         @AuthUser() user: AuthorizedUser,
+        @TransactionQueryRunner() queryRunner: QueryRunner
     ){
-        const queryRunner = this.connection.createQueryRunner();
-        try{
-            await queryRunner.connect();
-            await queryRunner.startTransaction();
+        const userId = user.id;
+        await this.authService.quit(userId, queryRunner);
 
-            const userId = user.id;
-            await this.authService.quit(userId, queryRunner);
-            await queryRunner.commitTransaction();
-
-            this.dataLoggingService.quit(user);
-            return makeApiResponse(HttpStatus.OK);
-        } catch(err){
-            await queryRunner.rollbackTransaction();
-            throw err;
-        } finally{
-            await queryRunner.release();
-        }
+        this.dataLoggingService.quit(user);
+        return makeApiResponse(HttpStatus.OK);
     }
 
 

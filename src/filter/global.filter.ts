@@ -36,6 +36,10 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
 
     if(exception.message) msg = exception.message;
 
+    if(exception instanceof NotFoundException){
+      return new NotFoundException()
+    }
+
     //for api response
     let apiResponse: ApiResult;
     switch(exception.constructor){

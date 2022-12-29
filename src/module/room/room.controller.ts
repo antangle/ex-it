@@ -1,6 +1,6 @@
+import { TransactionInterceptor } from './../../interceptor/transaction.interceptor';
 import { DataLoggingService } from './../../logger/logger.service';
 import { EndRoomException } from './../../exception/occupied.exception';
-import { LeaveDto } from './../../chat/dto/leave.dto';
 import { FindPeerDto } from './dto/find-peer.dto';
 import { RedisService } from './../redis/redis.service';
 import { BadRequestCustomException } from 'src/exception/bad-request.exception';
@@ -18,10 +18,10 @@ import { QueryRunner } from 'typeorm';
 import { CreateRoomDto } from './dto/create-room.dto';
 import { AuthorizedUser, Tokens } from './../../types/user.d';
 import { Connection } from 'typeorm';
-import { Body, Controller, Get, Post, HttpStatus, Inject, Logger, Version } from '@nestjs/common';
+import { Body, Controller, Get, Post, HttpStatus, Inject, Logger, Version, UseInterceptors } from '@nestjs/common';
 import { RoomService } from './room.service';
 import { SetCode, SetJwtAuth, makeApiResponse, ApiResponses, reviewMapperArray } from 'src/functions/util.functions';
-import { AuthToken, AuthUser } from 'src/decorator/decorators';
+import { AuthToken, AuthUser, TransactionQueryRunner } from 'src/decorator/decorators';
 import { ApiAcceptedResponse, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { randomUUID } from 'crypto';
 import { TagResponse } from './response/tag.response';
@@ -51,7 +51,7 @@ export class RoomController {
   @ApiOperation({
     summary: '예시 태그 가져오기',
     description: '로그인 했을 때만 가능. 대화방 만들기에서 필요한 태그들을 배열에 담아 제공한다. 서버에서 태그들의 id로 태그를 식별한다.',
-  }) 
+  })
   @ApiResponses(TagResponse)
   @SetJwtAuth()
   @SetCode(201)
@@ -80,6 +80,7 @@ export class RoomController {
   @ApiBody({
     type: CreateRoomDto
   })
+  @UseInterceptors(TransactionInterceptor)
   @SetJwtAuth()
   @SetCode(203)
   @Post('create')
@@ -87,64 +88,54 @@ export class RoomController {
     @AuthUser() user: AuthorizedUser,
     @AuthToken() tokens: Tokens,
     @Body() createRoomDto: CreateRoomDto,
+    @TransactionQueryRunner() queryRunner: QueryRunner
   ){
-    const queryRunner: QueryRunner = this.connection.createQueryRunner();
-    try{
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-      const roomname = randomUUID();
+    const roomname = randomUUID();
 
-      // get user info
-      const createUser = {id: user.id}
-      createRoomDto.create_user = createUser;
-      createRoomDto.is_online = true;
-      createRoomDto.roomname = roomname;
+    // get user info
+    const createUser = {id: user.id}
+    createRoomDto.create_user = createUser;
+    createRoomDto.is_online = true;
+    createRoomDto.roomname = roomname;
 
+    const { tags, custom_tags, ...roomDto } = createRoomDto;
+    const customTags = custom_tags;
+    const tagsLength = tags.length + custom_tags.length;
+    if(tagsLength <= 0 || tagsLength > 3) throw new BadRequestCustomException('태그는 1개이상 3개 이하여야 합니다', null);
 
-      const { tags, custom_tags, ...roomDto } = createRoomDto;
-      const customTags = custom_tags;
-      const tagsLength = tags.length + custom_tags.length;
-      if(tagsLength <= 0 || tagsLength > 3) throw new BadRequestCustomException('태그는 1개이상 3개 이하여야 합니다', null);
+    // make roomtags instance with tags
+    // save room
+    const room = await this.roomService.createRoom(roomDto, queryRunner);
+    const roomId = room.id;
 
-      // make roomtags instance with tags
-      // save room
-      const room = await this.roomService.createRoom(roomDto, queryRunner);
-      const roomId = room.id;
+    // check custom tags
+    const parsedCustomTags = this.roomService.parseCustomTags(customTags);
+    const customTagId = await this.roomService.checkCustomTags(parsedCustomTags, queryRunner);
 
-      // check custom tags
-      const parsedCustomTags = this.roomService.parseCustomTags(customTags);
-      const customTagId = await this.roomService.checkCustomTags(parsedCustomTags, queryRunner);
+    // concat with tags
+    if(customTagId){
+      customTagId.map(x => {
+        tags.push(x.id)
+      })
+    }   
 
-      // concat with tags
-      if(customTagId){
-        customTagId.map(x => {
-          tags.push(x.id)
-        })
-      }   
+    //remove overlapping tag ids
+    const tagSet = new Set(tags);
 
-      //remove overlapping tag ids
-      const tagSet = new Set(tags);
+    // save roomtag
+    const roomTags: RoomTag[] = this.roomService.parseSetToRoomTags(tagSet, roomId);
+    await this.roomService.saveRoomTags(roomTags, queryRunner);
 
-      // save roomtag
-      const roomTags: RoomTag[] = this.roomService.parseSetToRoomTags(tagSet, roomId);
-      await this.roomService.saveRoomTags(roomTags, queryRunner);
+    // join host to that room
+    const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, createUser, Status.HOST);
+    await this.roomService.joinRoom(roomJoinDto, queryRunner);
 
-      // join host to that room
-      const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, createUser, Status.HOST);
-      await this.roomService.joinRoom(roomJoinDto, queryRunner);
+    //await this.roomService.getTagNames(tagSet);
 
-      await queryRunner.commitTransaction();   
+    this.dataLoggingService.room_create(user, room)
+    this.dataLoggingService.keyword(user, room, roomTags)
 
-      this.dataLoggingService.room_create(user, room)
-      this.dataLoggingService.keyword(user, room, roomTags)
-
-      return makeApiResponse(HttpStatus.OK, {roomname, tokens});
-    } catch(err){
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
-    }
+    return makeApiResponse(HttpStatus.OK, {roomname, tokens});
   }
 
   @ApiOperation({
@@ -175,37 +166,28 @@ export class RoomController {
     `,
   })
   @ApiResponses(UserInfoResponse)
+  @UseInterceptors(TransactionInterceptor)
   @SetJwtAuth()
   @SetCode(205)
   @Post('user_info')
   async getHostInfo(
     @Body() userInfoDto: UserInfoDto,
     @AuthToken() tokens: Tokens,
+    @TransactionQueryRunner() queryRunner: QueryRunner
   ){
-    const queryRunner: QueryRunner = this.connection.createQueryRunner();
     const roomId = userInfoDto.room_id;
-    try{
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
+    const hostAndSpeaker = await this.roomService.getHostAndSpeaker(roomId);
 
-      const hostAndSpeaker = await this.roomService.getHostAndSpeaker(roomId);
-      const hostUserId = hostAndSpeaker[0].id;
-      const speakerUserId = hostAndSpeaker[0].is_occupied ? hostAndSpeaker[1].id : null;
+    const hostUserId = hostAndSpeaker[0].id;
+    const speakerUserId = hostAndSpeaker[0].is_occupied ? hostAndSpeaker[1].id : null;
 
-      this.logger.verbose(`host and speaker: ${JSON.stringify(hostAndSpeaker)}`)
-      this.logger.verbose(hostUserId)
+    this.logger.verbose(`host and speaker: ${JSON.stringify(hostAndSpeaker)}`)
+    this.logger.verbose(hostUserId)
 
-      const host = await this.roomService.getUserInfo(hostUserId, queryRunner);
-      const speaker = speakerUserId ? await this.roomService.getUserInfo(speakerUserId, queryRunner) : null;
+    const host = await this.roomService.getUserInfo(hostUserId, queryRunner);
+    const speaker = speakerUserId ? await this.roomService.getUserInfo(speakerUserId, queryRunner) : null;
 
-      await queryRunner.commitTransaction();
-      return makeApiResponse(HttpStatus.OK, {host, speaker, tokens});
-    } catch(err){
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally{
-      await queryRunner.release();
-    }
+    return makeApiResponse(HttpStatus.OK, {host, speaker, tokens});
   }
 
   @ApiOperation({
@@ -236,6 +218,7 @@ export class RoomController {
   @ApiBody({
     type: RoomEndDto
   })
+  @UseInterceptors(TransactionInterceptor)
   @SetJwtAuth()
   @SetCode(207)
   @Post('end')
@@ -243,69 +226,56 @@ export class RoomController {
     @Body() roomEndDto: RoomEndDto,
     @AuthUser() user: AuthorizedUser,
     @AuthToken() tokens: Tokens,
+    @TransactionQueryRunner() queryRunner: QueryRunner,
   ){
-    const queryRunner: QueryRunner = this.connection.createQueryRunner();
-    console.log(roomEndDto)
-    try{
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
-      const userId = user.id;
-      const roomId = roomEndDto.room_id;
+    const userId = user.id;
+    const roomId = roomEndDto.room_id;
 
-      const {roomname, peerId, nickname, status} = roomEndDto;
-      //해당 peerId 리스트에서 제거
-      await this.redisService.removeRoomPeerCache({roomname, peerId, nickname, status})
-      const updateRoomDto: UpdateRoomDto = {
-        is_occupied: null,
-        is_online: roomEndDto.continue
-      }
+    const {roomname, peerId, nickname, status} = roomEndDto;
+    //해당 peerId 리스트에서 제거
+    await this.redisService.removeRoomPeerCache({roomname, peerId, nickname, status})
+    const updateRoomDto: UpdateRoomDto = {
+      is_occupied: null,
+      is_online: roomEndDto.continue
+    }
 
-      if(roomEndDto.status == Status.HOST){
-        delete updateRoomDto.is_occupied;
-        console.log(updateRoomDto)
-        if(!roomEndDto.continue){
-          await this.redisService.removeRoomKey(roomEndDto.roomname)
-          await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
-        }
-      }
-      if(roomEndDto.status == Status.SPEAKER){
-        delete updateRoomDto.is_online;
-        console.log(updateRoomDto);
+    if(roomEndDto.status == Status.HOST){
+      delete updateRoomDto.is_occupied;
+      if(!roomEndDto.continue){
+        await this.redisService.removeRoomKey(roomEndDto.roomname)
         await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
       }
-/*       if(roomEndDto.status != Status.GUEST){
-      }
- */
-      /* let fellowStatus = roomEndDto.status == Status.HOST? Status.SPEAKER : Status.HOST;
-      const fellowId = await this.roomService.getUserIdFromStatus(roomId, fellowStatus, queryRunner);
-
-      //host speaker 둘다 있고, GUEST가 아니며, 통화를 한 상태 -> 리뷰 생성
-      // 리뷰가 생성되면 해당 방은 search에서 보이지 않음.
-      if(fellowId && roomEndDto.call_time > 0 && roomEndDto.status != Status.GUEST){
-        //get fellow id from roomJoin
-        const review = this.roomService.makeReview(roomEndDto, fellowId);
-        await this.roomService.createReview(review, queryRunner);
-      } */
-
-      //update room_join tables
-      const updateRoomJoinDto: UpdateRoomJoinDto = {
-        total_time: roomEndDto.total_time,
-        call_time: roomEndDto.call_time,
-        out: false
-      }
-
-      await this.roomService.updateRoomJoin(userId, roomId, roomEndDto.status, updateRoomJoinDto, queryRunner);
-      await queryRunner.commitTransaction();
-
-      this.dataLoggingService.room_end(user, roomId, status);
-
-      return makeApiResponse(HttpStatus.OK, {tokens});
-    } catch(err){
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
     }
+    if(roomEndDto.status == Status.SPEAKER){
+      delete updateRoomDto.is_online;
+      await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
+    }
+/*       if(roomEndDto.status != Status.GUEST){
+    }
+*/
+    /* let fellowStatus = roomEndDto.status == Status.HOST? Status.SPEAKER : Status.HOST;
+    const fellowId = await this.roomService.getUserIdFromStatus(roomId, fellowStatus, queryRunner);
+
+    //host speaker 둘다 있고, GUEST가 아니며, 통화를 한 상태 -> 리뷰 생성
+    // 리뷰가 생성되면 해당 방은 search에서 보이지 않음.
+    if(fellowId && roomEndDto.call_time > 0 && roomEndDto.status != Status.GUEST){
+      //get fellow id from roomJoin
+      const review = this.roomService.makeReview(roomEndDto, fellowId);
+      await this.roomService.createReview(review, queryRunner);
+    } */
+
+    //update room_join tables
+/*     const updateRoomJoinDto: UpdateRoomJoinDto = {
+      total_time: roomEndDto.total_time,
+      call_time: roomEndDto.call_time,
+      out: false
+    }
+
+    await this.roomService.updateRoomJoin(userId, roomId, roomEndDto.status, updateRoomJoinDto, queryRunner);
+ */
+    this.dataLoggingService.room_end(user, roomId, status);
+
+    return makeApiResponse(HttpStatus.OK, {tokens});
   }
 
   @ApiOperation({
@@ -316,23 +286,36 @@ export class RoomController {
   @ApiBody({
     type: makeReviewDto
   })
+  @UseInterceptors(TransactionInterceptor)
   @SetJwtAuth()
   @SetCode(213)
   @Post('review')
   async makeReview(
     @Body() makeReviewDto: makeReviewDto,
     @AuthToken() tokens: Tokens,
+    @AuthUser() user: AuthorizedUser,
+    @TransactionQueryRunner() queryRunner: QueryRunner,
   ){
     const roomId = makeReviewDto.room_id;
     let fellowStatus = makeReviewDto.status == Status.HOST? Status.SPEAKER : Status.HOST;
-    const fellowId = await this.roomService.getUserIdFromStatus(roomId, fellowStatus);
+    const fellowId = await this.roomService.getUserIdFromStatus(roomId, fellowStatus, queryRunner);
+
+    console.log(makeReviewDto)
+    console.log(`user: ${user.id}, fellow: ${fellowId}`)
+
+    const updateRoomJoinDto: UpdateRoomJoinDto = {
+      total_time: makeReviewDto.total_time,
+      call_time: makeReviewDto.call_time,
+      out: false
+    }
 
     //host speaker 둘다 있고, GUEST가 아니며, 통화를 한 상태 -> 리뷰 생성
     // * 리뷰가 생성되면 해당 방은 search에서 보이지 않음.
-    if(fellowId && makeReviewDto.call_time > 0 && makeReviewDto.status != Status.GUEST){
+    if(makeReviewDto.status != Status.GUEST){
       //get fellow id from roomJoin
       const review = this.roomService.makeReview(makeReviewDto, fellowId);
-      await this.roomService.createReview(review);
+      await this.roomService.createReview(review, queryRunner);  
+      await this.roomService.updateRoomJoin(user.id, roomId, makeReviewDto.status, updateRoomJoinDto, queryRunner);
     }
 
     return makeApiResponse(HttpStatus.OK, {tokens});
@@ -396,19 +379,19 @@ export class RoomController {
   @ApiBody({
     type: JoinRoomDto
   })
+  @UseInterceptors(TransactionInterceptor)
   @SetJwtAuth()
   @SetCode(210)
   @Post('join')
   async joinRoom(
     @AuthToken() tokens: Tokens,
     @AuthUser() user: AuthorizedUser,
-    @Body() joinRoomDto: JoinRoomDto
+    @Body() joinRoomDto: JoinRoomDto,
+    @TransactionQueryRunner() queryRunner: QueryRunner,
   ){
     const roomId = joinRoomDto.room_id;
-    const status = joinRoomDto.status;
-    const queryRunner = this.connection.createQueryRunner();
-
-    const room = await this.roomService.findRoomById(roomId);
+    const status = joinRoomDto.status;    
+    const room = await this.roomService.findRoomById(roomId, queryRunner);
     if(!room.is_online) throw new EndRoomException(consts.END_ROOM_ERROR_MSG, consts.END_ROOM_ERROR_CODE)
 
     if(status == Status.SPEAKER){
@@ -418,33 +401,23 @@ export class RoomController {
       /* await this.redisService.setRoomSpeakerCache(roomId, user.id);  */
     }
 
-    try{
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
 
-      const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, {id: user.id}, status);
-      await this.roomService.joinRoom(roomJoinDto, queryRunner);
+    const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, {id: user.id}, status);
+    await this.roomService.joinRoom(roomJoinDto, queryRunner);
 
-      if(status == Status.SPEAKER){
-        const updateRoomDto: UpdateRoomDto = {
-          is_occupied: new Date()
-        };
-        await this.roomService.updateRoomOccupiedLock(roomId, joinRoomDto.version, updateRoomDto, queryRunner);
+    if(status == Status.SPEAKER){
+      const updateRoomDto: UpdateRoomDto = {
+        is_occupied: new Date()
+      };
+      await this.roomService.updateRoomOccupiedLock(roomId, joinRoomDto.version, updateRoomDto, queryRunner);
 
 /*         const cachedUserId = await this.redisService.getRoomSpeakerCache(roomId);
-        if(cachedUserId){
-          if(cachedUserId != user.id) throw new OccupiedException(consts.ALREADY_OCCUPIED, consts.ALREADY_OCCUPIED_ERROR_CODE);
-        } */
-      }
-      this.dataLoggingService.room_join(user, room, status);
-      await queryRunner.commitTransaction();
-      return makeApiResponse(HttpStatus.OK, {tokens});      
-    } catch(err){
-      await queryRunner.rollbackTransaction();
-      throw err;
-    } finally {
-      await queryRunner.release();
+      if(cachedUserId){
+        if(cachedUserId != user.id) throw new OccupiedException(consts.ALREADY_OCCUPIED, consts.ALREADY_OCCUPIED_ERROR_CODE);
+      } */
     }
+    this.dataLoggingService.room_join(user, room, status);
+    return makeApiResponse(HttpStatus.OK, {tokens});      
   }
 
   @ApiOperation({
@@ -475,7 +448,9 @@ export class RoomController {
     @Body() findPeerDto: FindPeerDto,
     @AuthToken() tokens: Tokens,
   ){
-    const peers = await this.redisService.removeRoomKey(findPeerDto.roomname);
+    await this.redisService.removeRoomKey(findPeerDto.roomname);
+    const peers = await this.redisService.getRoomPeerCache(findPeerDto.roomname);
+    console.log(`after exit: ${findPeerDto.roomname}\n ${peers}`)
     return makeApiResponse(HttpStatus.OK, {tokens});
   }
 }

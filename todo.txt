@@ -71,3 +71,14 @@ Room search 소팅               v
 Firebase 푸시 관련조사          v
 
 10/21
+
+
+
+11/21
+onGatewayDisconnect 시 혹시 모를 peerId 제거??
+reconnect 로직 구현
+connection 완성 보여주는 로직 구현
+
+12/29
+1. user_info api 콜시 팅김현상
+2. 운영시간 제한 - 로그인, 방입장, 방생성 막기

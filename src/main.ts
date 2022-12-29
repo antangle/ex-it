@@ -12,7 +12,7 @@ import { SwaggerModule } from '@nestjs/swagger';
 import swaggerConfig from './config/swagger.config';
 import { getServer } from './config/https.config';
 import { AsyncApiModule } from 'nestjs-asyncapi';
-
+import helmet from 'helmet';
 async function bootstrap() {
   const devmode = process.env.DEVMODE;
   //for localhost ssl config, not used in production!!
@@ -23,6 +23,8 @@ async function bootstrap() {
     new ExpressAdapter(server)  
   );
   
+  app.use(helmet())
+
   //cors
   app.enableCors();
 
@@ -52,6 +54,8 @@ async function bootstrap() {
       defaultModelsExpandDepth: -1
     }
   });
+
+
 
   //logger
   const logger = app.get(WINSTON_MODULE_NEST_PROVIDER);

@@ -42,6 +42,9 @@ export class RedisService {
 
     async setRoomPeerCache(data: PeerJoinDto){
         const {roomname, peerId, nickname, status} = data;
+        if(!roomname || !peerId || !nickname || !status){
+            return true
+        }
         this.logger.verbose(`...saving cache...\nkey: ${roomname} value: ${JSON.stringify(data)}`);
         const payload = JSON.stringify({peerId, nickname, status})
         await this.redis.sadd(roomname, payload);

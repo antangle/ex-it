@@ -1,3 +1,4 @@
+import { MainModule } from './module/main/main.module';
 import { LoggerModule } from './logger/logger.module';
 import { MyScheduleModule } from './module/schedule/schedule.module';
 import { ConfigModule } from '@nestjs/config';
@@ -35,7 +36,8 @@ import { levels, passData } from './logger/logger';
     ProfileModule,
     ChatModule,
     MyScheduleModule,
-    DashboardModule
+    DashboardModule,
+    MainModule
   ],
   controllers: [AppController],
   providers: [

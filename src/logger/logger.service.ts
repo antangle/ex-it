@@ -34,6 +34,7 @@ export class DataLoggingService {
         const data = {
             user_id: user.id,
             event_name: this.login.name,
+            nickname: user.nickname,
             login_type: type
         };
         this.log(data);
@@ -43,6 +44,7 @@ export class DataLoggingService {
         const data = {
             user_id: user.id,
             event_name: this.logout.name,
+            nickname: user.nickname,
             login_type: user.type
         };
         this.log(data);
@@ -52,6 +54,7 @@ export class DataLoggingService {
         const data = {
             user_id: user.id,
             event_name: this.signin.name,
+            nickname: user.nickname,
             login_type: type
         };
         this.log(data);
@@ -61,6 +64,7 @@ export class DataLoggingService {
         const data = {
             user_id: user.id,
             event_name: this.quit.name,
+            nickname: user.nickname,
             login_type: user.type
         };
         this.log(data);
@@ -71,6 +75,7 @@ export class DataLoggingService {
         const data = {
             event_name: this.room_create.name,
             user_id: user.id,
+            nickname: user.nickname,
             room_id: room.id,
             status: consts.HOST
         };
@@ -80,6 +85,7 @@ export class DataLoggingService {
         const data = {
             event_name: this.room_end.name,
             user_id: user.id,
+            nickname: user.nickname,
             room_id: roomId,
             status: status
         };
@@ -90,6 +96,7 @@ export class DataLoggingService {
         const data = {
             event_name: this.room_join.name,
             user_id: user.id,
+            nickname: user.nickname,
             room_id: room.id,
             status: status
         };
@@ -100,9 +107,20 @@ export class DataLoggingService {
         const data = {
             event_name: this.keyword.name,
             user_id: user.id,
+            nickname: user.nickname,
             room_id: room.id,
             keyword: roomTags
         };
         this.log(data);
+    }
+
+    review(user: AuthorizedUser, ){
+        const data = {
+            event_name: this.keyword.name,
+            user_id: user.id,
+            nickname: user.nickname,
+        };
+        this.log(data);
+
     }
 }

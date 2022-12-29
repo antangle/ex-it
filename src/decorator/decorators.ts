@@ -14,3 +14,10 @@ export const AuthToken = createParamDecorator(
     return request.tokens;
   },
 );
+
+export const TransactionQueryRunner = createParamDecorator(
+  (data: unknown, ctx: ExecutionContext): AuthorizedUser => {
+    const request = ctx.switchToHttp().getRequest();
+    return request.queryRunner;
+  },
+);

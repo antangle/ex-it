@@ -35,12 +35,16 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
   
   @WebSocketServer() server: Server;
 
-  handleConnection(): void {
-    this.logger.verbose('!connected!', Date.now());
+  handleConnection(
+    @ConnectedSocket() socket: Socket
+  ): void {
+    this.logger.log('!connected!', socket.id);
   }
 
-  handleDisconnect(): void {
-    this.logger.verbose('!disonnected!', Date.now());
+  handleDisconnect(
+    @ConnectedSocket() socket: Socket, 
+  ): void {
+    this.logger.log('!disconnected!', socket.id);
   }
 
   //coming from peer.open()
@@ -179,7 +183,8 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
     await socket.leave(data.roomname);
     await this.redisService.removeRoomPeerCache(data)
     const payload: LeavedDto = {
-      nickname: data.nickname
+      nickname: data.nickname,
+      peerId: data.peerId
     }
     socket.to(data.roomname).emit('leaved', payload);
   }

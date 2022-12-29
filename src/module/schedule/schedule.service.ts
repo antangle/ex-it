@@ -30,10 +30,6 @@ export class TasksService {
 
   /* @Cron('0 4 * * *')
   async handleCron() {
-    const queryRunner = this.connection.createQueryRunner();
-    try{
-      await queryRunner.connect();
-      await queryRunner.startTransaction();
 
       const deleted = await queryRunner.manager.createQueryBuilder()
         .delete()
@@ -44,12 +40,7 @@ export class TasksService {
         .execute()
 
       this.logger.log('deleted quit users:', deleted)
-      await queryRunner.commitTransaction();
-    } catch(err){
-        await queryRunner.rollbackTransaction();
-        throw(err);
-    } finally{
-        await queryRunner.release();
+    
     }
   } */
 }
