@@ -142,14 +142,15 @@ import { AsyncApiPub, AsyncApiService, AsyncApiSub } from 'nestjs-asyncapi';
     },
   })
   @SubscribeMessage('message')
-  handleMessage(
+  async handleMessage(
       @ConnectedSocket() socket: Socket,
       @MessageBody(new SocketValidationPipe()) data: MessageDto
-  ): void {
+  ) {
       const payload = {
         msg: data.msg,
         nickname: data.nickname
       }
+      await socket.join(data.roomname);
       socket.to(data.roomname).emit('createMessage', payload);
   }
 

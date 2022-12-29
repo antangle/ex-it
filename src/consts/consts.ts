@@ -78,6 +78,7 @@ export const consts = {
     SEND_FCM_MESSAGE_ERR_MSG: 'fcm error',
     END_ROOM_ERROR_MSG: 'room already ended',
     VERSION_MISMATCH: 'version mismatch',
+    NOT_OPERATION_TIME: 'not operation time',
     //Error codes
     SIGNIN_ERROR_CODE: 1,
     LOCAL_STRATEGY_ERROR_CODE: 2,
@@ -133,5 +134,6 @@ export const consts = {
     FIND_ROOM_BY_ID_ERROR_CODE: 52,
     END_ROOM_ERROR_CODE: 53,
     UPDATE_ROOM_OCCUPIED_ERROR_CODE: 54,
-    UPDATE_ROOM_OCCUPIED_LOCK_ERROR_CODE: 54,
+    UPDATE_ROOM_OCCUPIED_LOCK_ERROR_CODE: 55,
+    NOT_OPERATION_TIME_ERROR_CODE: 56
 }

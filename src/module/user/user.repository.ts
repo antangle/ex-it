@@ -25,32 +25,53 @@ export class UserRepository extends Repository<User> {
 
     //get max review count
     async getProfileQuery(param: string | number): Promise<any>{
-        const status = [consts.HOST, consts.SPEAKER];
+        const status = consts.GUEST;
         let query = this.createQueryBuilder('user')
             .select('user.nickname AS nickname, user.alarm AS alarm')
             .addSelect([
-                'room_agg.total_time::integer', 
-                'room_agg.total_call::integer', 
-                'room_agg.connection::integer'
+                'room_agg.total_time::integer',
+                'room_agg.total_call::integer',
+                'review.connection::integer'
             ])
             .leftJoin((qb) => {
-                return qb.subQuery()
-                    .select('user.id as userId')
-                    .addSelect([
-                        'SUM(room_join.total_time) AS total_time', 
-                        'SUM(room_join.call_time) AS total_call',
-                        'COUNT(room_join.id) AS connection'
+                let q = qb.subQuery()
+                .select('user.id as userId')
+                .addSelect([
+                    'SUM(room_join.total_time) AS total_time', 
+                    'SUM(room_join.call_time) AS total_call',
+                ])
+                .from(User, 'user');
+        
+                if(typeof param === 'string') q = q.where('user.email = :email', {email: param})
+                else if(typeof param === 'number') q = q.where('user.id = :userId', {userId: param})
+        
+                q.andWhere('room_join.status != :status')
+                .setParameter('status', status)
+                .leftJoin('user.room_join', 'room_join')
+                .groupBy('user.id')
+  
+                return q;
+            }, 'room_agg', 'room_agg.userId = user.id')
+            .leftJoin((qb) => {
+                let q = qb.subQuery()
+                    .select([
+                        'user.id as userId',
+                        'COUNT(review.id) AS connection',
                     ])
                     .from(User, 'user')
-                    .where('room_join.status IN (:...status)')
-                    .leftJoin('user.room_join', 'room_join')
-                    .groupBy('user.id')
-            }, 'room_agg', 'room_agg.userId = user.id')
-            .setParameter('status', status);
-
+    
+                if(typeof param === 'string') q = q.where('user.email = :email', {email: param})
+                else if(typeof param === 'number') q = q.where('user.id = :userId', {userId: param})
+                
+                q.andWhere('review.reviewMapperId < :no_review_number')
+                    .setParameter('no_review_number', consts.NO_REVIEW_NUMBER)
+                    .innerJoin(Review, 'review', 'review.userId = user.id')
+                    .groupBy('userId')
+                return q
+            }, 'review', 'review.userId = user.id')
         if(typeof param === 'string') query = query.where('user.email = :email', {email: param})
         else if(typeof param === 'number') query = query.where('user.id = :userId', {userId: param})
-
+  
         return await query.andWhere('user.deleted_at IS NULL')
             .getRawOne();
     }

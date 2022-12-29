@@ -11,6 +11,22 @@ export class CreateUserDto {
     email?: string;
 
     @ApiProperty({
+        default: 'male',
+        description: 'male'
+    })
+    @IsString()
+    @IsOptional()
+    sex?: string;
+
+    @ApiProperty({
+        default: '19581211',
+        description: '생년월일'
+    })
+    @IsString()
+    @IsOptional()
+    birth?: string
+
+    @ApiProperty({
         default: 'testpassword',
     })
     @IsString()

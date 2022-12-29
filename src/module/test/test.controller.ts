@@ -1,3 +1,5 @@
+import { Review } from './../../entities/review.entity';
+import { MainService } from './../main/main.service';
 import { consts } from './../../consts/consts';
 import { TransactionQueryRunner } from './../../decorator/decorators';
 import { TransactionInterceptor } from './../../interceptor/transaction.interceptor';
@@ -26,10 +28,64 @@ export class TestController {
     private readonly fcmService: FcmService,
     private readonly roomRepository: RoomRepository,
     private readonly loggingService: DataLoggingService,
+    private readonly mainService: MainService,
     ) {}
 
-    @Get('test1')
+    @Get('test')
     async test(@Request() req, @Body('room_id') roomId: number){
+      const param = "test2@naver.com"
+      const status = consts.GUEST;
+      let query = this.connection.createQueryBuilder(User, 'user')
+          .select('user.nickname AS nickname, user.alarm AS alarm')
+          .addSelect([
+              'room_agg.total_time::integer', 
+              'room_agg.total_call::integer', 
+              'review.connection::integer'
+          ])
+          .leftJoin((qb) => {
+              let q = qb.subQuery()
+              .select('user.id as userId')
+              .addSelect([
+                  'SUM(room_join.total_time) AS total_time', 
+                  'SUM(room_join.call_time) AS total_call',
+              ])
+              .from(User, 'user');
+      
+              if(typeof param === 'string') q = q.where('user.email = :email', {email: param})
+              else if(typeof param === 'number') q = q.where('user.id = :userId', {userId: param})
+      
+              q.andWhere('room_join.status != :status')
+              .setParameter('status', status)
+              .leftJoin('user.room_join', 'room_join')
+              .groupBy('user.id')
+
+              return q;
+          }, 'room_agg', 'room_agg.userId = user.id')
+        .leftJoin((qb) => {
+          let q = qb.subQuery()
+            .select([
+                'user.id as userId',
+                'COUNT(review.id) AS connection',
+            ])
+            .from(User, 'user')
+
+            if(typeof param === 'string') q = q.where('user.email = :email', {email: param})
+            else if(typeof param === 'number') q = q.where('user.id = :userId', {userId: param})
+            
+            q.andWhere('review.reviewMapperId < :no_review_number')
+            .setParameter('no_review_number', consts.NO_REVIEW_NUMBER)
+            .innerJoin(Review, 'review', 'review.userId = user.id')
+            .groupBy('userId')
+            return q
+        }, 'review', 'review.userId = user.id')
+      if(typeof param === 'string') query = query.where('user.email = :email', {email: param})
+      else if(typeof param === 'number') query = query.where('user.id = :userId', {userId: param})
+
+      return await query.andWhere('user.deleted_at IS NULL')
+        .getRawOne();
+    }
+    @Get('test1')
+    async test1(@Request() req, @Body('room_id') roomId: number){
       const data = {
         event_name: "test",
         user_id: 0,
@@ -37,6 +93,12 @@ export class TestController {
         status: consts.HOST
       };
       return 1;
+    }
+
+    @Get('test2')
+    async test2(@Request() req, @Body('room_id') roomId: number){
+      console.log(new Date().getHours())
+      return await this.mainService.isOperationTime()
     }
 
     @Post('set')

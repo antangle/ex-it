@@ -148,12 +148,18 @@ export class RoomService {
     }
 
     async getTagNames(tags: Set<number>, queryRunner?: QueryRunner){
-        const roomTagRepository = queryRunner ? queryRunner.manager.getRepository(RoomTag) : this.roomTagRepository;
+        const tagRepository = queryRunner ? queryRunner.manager.getRepository(Tag) : this.tagRepository;
         try{
-            return await roomTagRepository.createQueryBuilder('room_tag')
-                .select('room_tag.name')
-                .where('room_tag.id IN (:...tags)', tags)
+            const tagNames = await tagRepository.createQueryBuilder('tag')
+                .select('tag.name')
+                .where('tag.id IN (:...tags)', {tags: Array.from(tags)})
                 .getRawMany();
+
+            const data = [];
+            if(tagNames){
+                tagNames.forEach(x => data.push(x.tag_name));
+            }
+            return data;
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);
             else throw new UnhandledException(this.saveRoomTags.name, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);

@@ -1,3 +1,4 @@
+import { MainModule } from './../main/main.module';
 import { DataLoggingService } from './../../logger/logger.service';
 import { MyRedisModule } from './../redis/redis.module';
 import { UtilModule } from '../util/util.module';
@@ -13,6 +14,7 @@ import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategy/jwt.stategy';
 import { UserRepository } from '../user/user.repository';
+import { MainService } from '../main/main.service';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { UserRepository } from '../user/user.repository';
     PassportModule,
     UtilModule,
     MyRedisModule,
+    MainModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],

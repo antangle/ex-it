@@ -1,3 +1,4 @@
+import { MainService } from './../main/main.service';
 import { TransactionInterceptor } from './../../interceptor/transaction.interceptor';
 import { DataLoggingService } from './../../logger/logger.service';
 import { EndRoomException } from './../../exception/occupied.exception';
@@ -35,6 +36,7 @@ import { FindPeerResponse } from './response/find-peer.response';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { OccupiedException } from 'src/exception/occupied.exception';
 import { Room } from 'src/entities/room.entity';
+import { IsSpeakerDto } from './dto/isSpeaker.dto';
 
 @ApiTags('room')
 @Controller('room')
@@ -42,6 +44,7 @@ export class RoomController {
   constructor(
     private readonly roomService: RoomService,
     private readonly redisService: RedisService,
+    private readonly mainService: MainService,
     private connection: Connection,
     private dataLoggingService: DataLoggingService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private logger: Logger
@@ -103,10 +106,11 @@ export class RoomController {
     const tagsLength = tags.length + custom_tags.length;
     if(tagsLength <= 0 || tagsLength > 3) throw new BadRequestCustomException('태그는 1개이상 3개 이하여야 합니다', null);
 
-    // make roomtags instance with tags
     // save room
     const room = await this.roomService.createRoom(roomDto, queryRunner);
     const roomId = room.id;
+
+    // make roomtags instance with tags
 
     // check custom tags
     const parsedCustomTags = this.roomService.parseCustomTags(customTags);
@@ -118,7 +122,6 @@ export class RoomController {
         tags.push(x.id)
       })
     }   
-
     //remove overlapping tag ids
     const tagSet = new Set(tags);
 
@@ -130,10 +133,10 @@ export class RoomController {
     const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, createUser, Status.HOST);
     await this.roomService.joinRoom(roomJoinDto, queryRunner);
 
-    //await this.roomService.getTagNames(tagSet);
-
+    const tagNames = await this.roomService.getTagNames(tagSet, queryRunner);
+    console.log(tagNames)
     this.dataLoggingService.room_create(user, room)
-    this.dataLoggingService.keyword(user, room, roomTags)
+    this.dataLoggingService.tag(user, room, tagNames)
 
     return makeApiResponse(HttpStatus.OK, {roomname, tokens});
   }
@@ -228,7 +231,6 @@ export class RoomController {
     @AuthToken() tokens: Tokens,
     @TransactionQueryRunner() queryRunner: QueryRunner,
   ){
-    const userId = user.id;
     const roomId = roomEndDto.room_id;
 
     const {roomname, peerId, nickname, status} = roomEndDto;
@@ -316,6 +318,7 @@ export class RoomController {
       const review = this.roomService.makeReview(makeReviewDto, fellowId);
       await this.roomService.createReview(review, queryRunner);  
       await this.roomService.updateRoomJoin(user.id, roomId, makeReviewDto.status, updateRoomJoinDto, queryRunner);
+      await this.dataLoggingService.review(user, makeReviewDto.call_time)
     }
 
     return makeApiResponse(HttpStatus.OK, {tokens});
@@ -390,7 +393,7 @@ export class RoomController {
     @TransactionQueryRunner() queryRunner: QueryRunner,
   ){
     const roomId = joinRoomDto.room_id;
-    const status = joinRoomDto.status;    
+    const status = joinRoomDto.status;
     const room = await this.roomService.findRoomById(roomId, queryRunner);
     if(!room.is_online) throw new EndRoomException(consts.END_ROOM_ERROR_MSG, consts.END_ROOM_ERROR_CODE)
 

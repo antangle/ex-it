@@ -1,3 +1,4 @@
+import { MainService } from './main.service';
 import { InjectRepository } from '@nestjs/typeorm';
 import { makeApiResponse, SetCode } from 'src/functions/util.functions';
 import { Controller, Get, HttpStatus, Response } from '@nestjs/common';
@@ -7,7 +8,7 @@ import { TimeSetter } from 'src/entities/timeSetter.entity';
 @Controller('main')
 export class MainController {
   constructor(
-    @InjectRepository(TimeSetter) private timeSetterRepository: Repository<TimeSetter>
+    private readonly mainService: MainService,
     ) {}
 
   @Get('health')
@@ -18,9 +19,7 @@ export class MainController {
   @Get('service')
   @SetCode(401)
   async serviceCheck(){
-    const temp = await this.timeSetterRepository.findOne();
-    const start: number = temp.start;
-    const end: number = temp.end;
+    const {start, end} = await this.mainService.getOperationTime();
     return makeApiResponse(HttpStatus.OK, {start, end});
   }
 }

@@ -1,3 +1,4 @@
+import { MainModule } from './../main/main.module';
 import { DataLoggingService } from './../../logger/logger.service';
 import { RoomRepository } from './../room/room.repository';
 import { FcmModule } from './../fcm/fcm.module';
@@ -19,7 +20,8 @@ import { TestController } from './test.controller';
     AuthModule,
     MyRedisModule,
     UtilModule,
-    FcmModule
+    FcmModule,
+    MainModule
   ],
   controllers: [TestController],
   providers: [

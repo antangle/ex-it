@@ -10,7 +10,7 @@ export class WebsocketLoggingInterceptor implements NestInterceptor {
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         let data = context.switchToWs().getData();
         let client: Socket = context.switchToWs().getClient();
-        this.logger.log(`socket client id: ${client.id}\n ${JSON.stringify(data)}`);
+        console.log(`socket client id: ${client.id}\n ${data}`);
         return next
             .handle();
     }

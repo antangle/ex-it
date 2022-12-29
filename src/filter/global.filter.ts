@@ -1,3 +1,4 @@
+import { NotOperationTimeException } from 'src/exception/noOperationTime.exception';
 import { VersionMismatchError } from './../exception/version.exception';
 import { EndRoomException } from './../exception/occupied.exception';
 import { FirebaseException } from './../exception/firebase.exception';
@@ -102,6 +103,10 @@ export class GlobalExceptionFilter extends BaseExceptionFilter {
       case VersionMismatchError:
         if(!msg) msg = consts.VERSION_MISMATCH;
         apiResponse = makeApiResponse(HttpStatus.UNAUTHORIZED, null, msg)
+        break;
+      case NotOperationTimeException:
+        msg = consts.NOT_OPERATION_TIME;
+        apiResponse = makeApiResponse(HttpStatus.NOT_ACCEPTABLE, null, msg)
         break;
       default:
         if(!msg) msg = consts.SERVER_ERROR;

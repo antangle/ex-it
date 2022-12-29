@@ -1,3 +1,4 @@
+import { MainService } from './../main/main.service';
 import { TransactionInterceptor } from './../../interceptor/transaction.interceptor';
 import { CheckEmailDto } from './dto/check-email.dto';
 import { TooManyRequestException } from './../../exception/bad-request.exception';
@@ -29,6 +30,7 @@ import { VerifyResponse } from './response/verify.response';
 import { LoginResponse } from './response/login.response';
 import { DataLoggingService } from 'src/logger/logger.service';
 import { UseInterceptors } from '@nestjs/common/decorators';
+import { NotOperationTimeException } from 'src/exception/noOperationTime.exception';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -39,6 +41,7 @@ export class AuthController {
         private redisService: RedisService,
         private userService: UserService,
         private utilService: UtilService,
+        private mainService: MainService,
         private connection: Connection,
         private readonly dataLoggingService: DataLoggingService,
     ){}
@@ -54,7 +57,7 @@ export class AuthController {
     @ApiResponses(LoginResponse)
     @UseGuards(LocalAuthGuard)
     @SetCode(101)
-    async login(@AuthUser() user: AuthorizedUser){        
+    async login(@AuthUser() user: AuthorizedUser){
         const tokens = await this.authService.signIn(user);
         //log data at the end of api
         this.dataLoggingService.login(user);
@@ -107,7 +110,7 @@ export class AuthController {
         @Body() oauthLoginDto: OAuthLoginDto,
         @TransactionQueryRunner() queryRunner: QueryRunner
         ){
-        
+
         //authentication with access_token
         // await this.authService.validateOAuthAccessToken(oauthLoginDto.oauth_access_token, oauthLoginDto.type);
 
@@ -227,15 +230,19 @@ export class AuthController {
         @Body() oAuthSignInDto: OAuthSignInDto,
         @TransactionQueryRunner() queryRunner: QueryRunner
         ){
-        const {
+        let {
             type, 
             oauth_access_token,
-            email, 
-            terms, 
-            personal_info_terms, 
-            oauth_refresh_token 
+            sex,
+            birth,
+            email,
+            terms,
+            personal_info_terms,
+            oauth_refresh_token
         } = oAuthSignInDto;
 
+        if(!birth) birth = null;
+        if(!sex) sex = null;
         
         //check authentication with access token
         //const isValid = await this.authService.validateOAuthAccessToken(oauth_access_token, type)
@@ -247,6 +254,8 @@ export class AuthController {
         if(!user) {
             const createUserDto: CreateUserDto = {
                 nickname: await this.authService.getRandomNickname(),
+                sex: sex,
+                birth: birth,
                 email: email,
                 terms: terms,
                 personal_info_terms: personal_info_terms,
@@ -254,6 +263,7 @@ export class AuthController {
             };
             user = await this.userService.createUser(createUserDto, queryRunner);
         }
+        console.log(birth, sex);
         const nickname = user.nickname;
         //if user with that email already exists, just link
         const authCreateDto: Auth = {
@@ -269,7 +279,7 @@ export class AuthController {
         const tokens = await this.authService.signIn(user, type, queryRunner);
 
         //log data at the end of api
-        this.dataLoggingService.signin(user, type);
+        this.dataLoggingService.signin(user, type, birth, sex);
 
         return makeApiResponse(HttpStatus.OK, {tokens, nickname: nickname});
     }

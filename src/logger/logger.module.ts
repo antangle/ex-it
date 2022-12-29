@@ -11,7 +11,7 @@ import WinstonDailyRotate from 'winston-daily-rotate-file';
             levels: levels,
             transports: [
               new winston.transports.Console({
-                level: process.env.DEVMODE === 'dev' ? consts.DATA: 'warn',
+                level: process.env.DEVMODE === 'dev' ? consts.DATA: 'log',
                 format: winston.format.combine(
                   winston.format.timestamp(),
                   nestWinstonModuleUtilities.format.nestLike('Ex-it', { prettyPrint: process.env.DEVMODE === 'dev' ? true : false }),
