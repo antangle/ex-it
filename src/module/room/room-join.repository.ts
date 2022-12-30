@@ -37,18 +37,15 @@ export class RoomJoinRepository extends Repository<RoomJoin> {
             .execute();
     }
 
-    async getHostAndSpeaker(roomId: number): Promise<any[]>{
-        const status = [consts.HOST, consts.SPEAKER];
+    async getHostAndSpeaker(roomId: number): Promise<any>{
+        const status = consts.HOST;
         return await this.createQueryBuilder('room_join')
             .select('room_join.userId AS id')
+            .addSelect('room.speakerId', 'speakerId')
             .where('room_join.roomId = :roomId', {roomId: roomId})
-            .andWhere('room_join.status IN (:...status)')
+            .andWhere('room_join.status = :status')
             .setParameter('status', status)
             .innerJoin('room_join.room', 'room')
-            .addSelect('room.is_occupied', 'is_occupied')
-            .orderBy('room_join.status', 'ASC')
-            .addOrderBy('room_join.created_at', 'DESC')
-            .limit(2)
-            .getRawMany();
+            .getRawOne();
     }
 }

@@ -30,49 +30,26 @@ export class UserRepository extends Repository<User> {
             .select('user.nickname AS nickname, user.alarm AS alarm')
             .addSelect([
                 'room_agg.total_time::integer',
-                'room_agg.total_call::integer',
-                'review.connection::integer'
+                'room_agg.total_call::integer'
             ])
+            .where('user.deleted_at IS NULL')
             .leftJoin((qb) => {
-                let q = qb.subQuery()
+                return qb.subQuery()
                 .select('user.id as userId')
                 .addSelect([
                     'SUM(room_join.total_time) AS total_time', 
                     'SUM(room_join.call_time) AS total_call',
                 ])
-                .from(User, 'user');
-        
-                if(typeof param === 'string') q = q.where('user.email = :email', {email: param})
-                else if(typeof param === 'number') q = q.where('user.id = :userId', {userId: param})
-        
-                q.andWhere('room_join.status != :status')
+                .from(User, 'user')
+                .where('room_join.status != :status')
                 .setParameter('status', status)
                 .leftJoin('user.room_join', 'room_join')
-                .groupBy('user.id')
-  
-                return q;
+                .groupBy('userId')
             }, 'room_agg', 'room_agg.userId = user.id')
-            .leftJoin((qb) => {
-                let q = qb.subQuery()
-                    .select([
-                        'user.id as userId',
-                        'COUNT(review.id) AS connection',
-                    ])
-                    .from(User, 'user')
-    
-                if(typeof param === 'string') q = q.where('user.email = :email', {email: param})
-                else if(typeof param === 'number') q = q.where('user.id = :userId', {userId: param})
-                
-                q.andWhere('review.reviewMapperId < :no_review_number')
-                    .setParameter('no_review_number', consts.NO_REVIEW_NUMBER)
-                    .innerJoin(Review, 'review', 'review.userId = user.id')
-                    .groupBy('userId')
-                return q
-            }, 'review', 'review.userId = user.id')
-        if(typeof param === 'string') query = query.where('user.email = :email', {email: param})
-        else if(typeof param === 'number') query = query.where('user.id = :userId', {userId: param})
+        if(typeof param === 'string') query.andWhere('user.email = :email', {email: param})
+        else if(typeof param === 'number') query.andWhere('user.id = :userId', {userId: param})
   
-        return await query.andWhere('user.deleted_at IS NULL')
+        return await query
             .getRawOne();
     }
 

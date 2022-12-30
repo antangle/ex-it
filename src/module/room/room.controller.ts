@@ -1,3 +1,4 @@
+import { TimeInterceptor } from './../../interceptor/logging.interceptor';
 import { MainService } from './../main/main.service';
 import { TransactionInterceptor } from './../../interceptor/transaction.interceptor';
 import { DataLoggingService } from './../../logger/logger.service';
@@ -170,6 +171,7 @@ export class RoomController {
   })
   @ApiResponses(UserInfoResponse)
   @UseInterceptors(TransactionInterceptor)
+  @UseInterceptors(TimeInterceptor)
   @SetJwtAuth()
   @SetCode(205)
   @Post('user_info')
@@ -179,14 +181,15 @@ export class RoomController {
     @TransactionQueryRunner() queryRunner: QueryRunner
   ){
     const roomId = userInfoDto.room_id;
+    const now = Date.now()
     const hostAndSpeaker = await this.roomService.getHostAndSpeaker(roomId);
-
-    const hostUserId = hostAndSpeaker[0].id;
-    const speakerUserId = hostAndSpeaker[0].is_occupied ? hostAndSpeaker[1].id : null;
-
-    this.logger.verbose(`host and speaker: ${JSON.stringify(hostAndSpeaker)}`)
-    this.logger.verbose(hostUserId)
-
+    console.log(Date.now() - now)
+    const hostUserId = hostAndSpeaker[0];
+    const speakerUserId = hostAndSpeaker[1];
+    
+    this.logger.log(`host and speaker: ${JSON.stringify(hostAndSpeaker)}`)
+    this.logger.log(hostUserId)
+    
     const host = await this.roomService.getUserInfo(hostUserId, queryRunner);
     const speaker = speakerUserId ? await this.roomService.getUserInfo(speakerUserId, queryRunner) : null;
 
@@ -238,18 +241,17 @@ export class RoomController {
     await this.redisService.removeRoomPeerCache({roomname, peerId, nickname, status})
     const updateRoomDto: UpdateRoomDto = {
       is_occupied: null,
-      is_online: roomEndDto.continue
+      is_online: roomEndDto.continue,
+      speakerId: null
     }
 
     if(roomEndDto.status == Status.HOST){
-      delete updateRoomDto.is_occupied;
       if(!roomEndDto.continue){
         await this.redisService.removeRoomKey(roomEndDto.roomname)
         await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
       }
     }
-    if(roomEndDto.status == Status.SPEAKER){
-      delete updateRoomDto.is_online;
+    else if(roomEndDto.status == Status.SPEAKER){
       await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
     }
 /*       if(roomEndDto.status != Status.GUEST){
@@ -354,6 +356,7 @@ export class RoomController {
     description: '해당 room의 speaker자리가 비어있는지 체크. 차있으면 true, 비어있으면 false',
   })
   @ApiResponses(OccupiedResponse)
+  @UseInterceptors(TimeInterceptor)
   //true if speaker is talking, else false
   @SetJwtAuth()
   @SetCode(209)
@@ -410,7 +413,8 @@ export class RoomController {
 
     if(status == Status.SPEAKER){
       const updateRoomDto: UpdateRoomDto = {
-        is_occupied: new Date()
+        is_occupied: new Date(),
+        speakerId: user.id
       };
       await this.roomService.updateRoomOccupiedLock(roomId, joinRoomDto.version, updateRoomDto, queryRunner);
 

@@ -278,8 +278,10 @@ export class RoomService {
         try{
             const roomjoins = await roomJoinRepository.getHostAndSpeaker(roomId);
             if(!roomjoins || roomjoins.length == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_HOST_AND_SPEAKER_ERROR_CODE);
-
-            return roomjoins;
+            console.log(roomjoins)
+            const hostId = roomjoins.id;
+            const speakerId = roomjoins.speakerId;
+            return [hostId, speakerId];
         } catch(err){
             if(err instanceof NotExistsException) throw err;
             else if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.GET_HOST_AND_SPEAKER_ERROR_CODE, err);
@@ -345,10 +347,11 @@ export class RoomService {
             const tags = await roomJoinRepository.getMostUsedTags(userId);
             const reviews = await userRepository.getReviewCount(userId);
             const parsedReviews = await this.utilService.parseReview(reviews);
+            userInfo.connection = +parsedReviews.count;
             return {
                 userInfo: userInfo,
                 usedTags: this.parseTags(tags),
-                reviews: parsedReviews,
+                reviews: parsedReviews.review,
             }
         } catch(err){
             if(err instanceof DatabaseException) throw err;

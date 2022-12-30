@@ -186,7 +186,13 @@ export class UtilService {
     }
 
     async parseReview(reviews: any[]){
-        if(reviews.length == 0) return null;
+        let count = 0
+        if(reviews.length == 0) {
+            return {
+                review: null,
+                count: count
+            };
+        }
         const reviewMapper = await this.findReviews();
         try{
             let data = {};
@@ -200,9 +206,13 @@ export class UtilService {
             if(reviews[0].reviewMapperId != null){
                 reviews.map(review => {
                     data[review.reviewMapperId].count = review.count;
+                    count += +review.count
                 })
             }
-            return Object.values(data);
+            return {
+                review: Object.values(data),
+                count: count
+            };
         } catch(err){
             throw err;
         }

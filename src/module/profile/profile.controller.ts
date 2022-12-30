@@ -1,10 +1,11 @@
+import { TransactionInterceptor } from './../../interceptor/transaction.interceptor';
 import { UtilService } from './../util/util.service';
 import { AuthorizedUser, Tokens } from './../../types/user.d';
-import { Controller, Get, Request, HttpStatus, Query } from '@nestjs/common';
+import { Controller, Get, Request, HttpStatus, Query, UseInterceptors } from '@nestjs/common';
 import { ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { AuthToken, AuthUser } from 'src/decorator/decorators';
+import { AuthToken, AuthUser, TransactionQueryRunner } from 'src/decorator/decorators';
 import { SetCode, SetJwtAuth, makeApiResponse, ApiResponses } from 'src/functions/util.functions';
-import { Connection } from 'typeorm';
+import { Connection, QueryRunner } from 'typeorm';
 import { ProfileService } from './profile.service';
 import { SettingResponse } from './response/profile.response';
 import { MyInfoResponse } from './response/myinfo.response';
@@ -25,15 +26,18 @@ export class ProfileController {
     description: 'mypage/setting에 필요한 정보들 모음',
   })
   @ApiResponses(SettingResponse)
+  @UseInterceptors(TransactionInterceptor)
   @SetJwtAuth()
   @SetCode(201)
   @Get('setting')
   async getProfile(
     @AuthUser() user: AuthorizedUser,
-    @AuthToken() tokens: Tokens
+    @AuthToken() tokens: Tokens,
+    @TransactionQueryRunner() queryRunner: QueryRunner
   ){
       const userId = user.id;
-      const result = await this.profileService.getProfileInfo(userId);
+      const result = await this.profileService.getProfileInfo(userId, queryRunner);
+      console.log(result);
       return makeApiResponse(HttpStatus.OK, {...result, tokens});
   }
   
@@ -49,12 +53,13 @@ export class ProfileController {
     @AuthUser() user: AuthorizedUser,
     @AuthToken() tokens: Tokens
   ){
+    console.log('myinfo api')
     const userId = user.id;
     const reviews = await this.profileService.getMyInfo(userId);
     const reviewData = await this.utilService.parseReview(reviews);
     const result = {
       nickname: reviews[0].nickname,
-      reviews: reviewData
+      reviews: reviewData.review
     }
     return makeApiResponse(HttpStatus.OK, {...result, tokens});
   }

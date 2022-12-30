@@ -1,3 +1,4 @@
+import { TimeInterceptor } from './../../interceptor/logging.interceptor';
 import { Review } from './../../entities/review.entity';
 import { MainService } from './../main/main.service';
 import { consts } from './../../consts/consts';
@@ -32,57 +33,34 @@ export class TestController {
     ) {}
 
     @Get('test')
+    @UseInterceptors(TimeInterceptor)
     async test(@Request() req, @Body('room_id') roomId: number){
-      const param = "test2@naver.com"
+      const param = "test3@naver.com"
       const status = consts.GUEST;
-      let query = this.connection.createQueryBuilder(User, 'user')
+      let query = this.connection.manager.createQueryBuilder(User, 'user')
           .select('user.nickname AS nickname, user.alarm AS alarm')
           .addSelect([
-              'room_agg.total_time::integer', 
-              'room_agg.total_call::integer', 
-              'review.connection::integer'
+              'room_agg.total_time::integer',
+              'room_agg.total_call::integer'
           ])
           .leftJoin((qb) => {
-              let q = qb.subQuery()
+              return qb.subQuery()
               .select('user.id as userId')
               .addSelect([
                   'SUM(room_join.total_time) AS total_time', 
                   'SUM(room_join.call_time) AS total_call',
               ])
-              .from(User, 'user');
-      
-              if(typeof param === 'string') q = q.where('user.email = :email', {email: param})
-              else if(typeof param === 'number') q = q.where('user.id = :userId', {userId: param})
-      
-              q.andWhere('room_join.status != :status')
+              .from(User, 'user')
+              .andWhere('room_join.status != :status')
               .setParameter('status', status)
               .leftJoin('user.room_join', 'room_join')
               .groupBy('user.id')
-
-              return q;
           }, 'room_agg', 'room_agg.userId = user.id')
-        .leftJoin((qb) => {
-          let q = qb.subQuery()
-            .select([
-                'user.id as userId',
-                'COUNT(review.id) AS connection',
-            ])
-            .from(User, 'user')
-
-            if(typeof param === 'string') q = q.where('user.email = :email', {email: param})
-            else if(typeof param === 'number') q = q.where('user.id = :userId', {userId: param})
-            
-            q.andWhere('review.reviewMapperId < :no_review_number')
-            .setParameter('no_review_number', consts.NO_REVIEW_NUMBER)
-            .innerJoin(Review, 'review', 'review.userId = user.id')
-            .groupBy('userId')
-            return q
-        }, 'review', 'review.userId = user.id')
       if(typeof param === 'string') query = query.where('user.email = :email', {email: param})
       else if(typeof param === 'number') query = query.where('user.id = :userId', {userId: param})
 
       return await query.andWhere('user.deleted_at IS NULL')
-        .getRawOne();
+          .getRawOne();
     }
     @Get('test1')
     async test1(@Request() req, @Body('room_id') roomId: number){

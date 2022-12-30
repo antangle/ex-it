@@ -3,17 +3,17 @@ import { Observable } from 'rxjs';
 import { tap } from 'rxjs/operators';
 
 @Injectable()
-export class LoggingInterceptor implements NestInterceptor {
-    constructor(private logger: Logger){}
+export class TimeInterceptor implements NestInterceptor {
+    constructor(){}
 
     intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
         const { method, url, body } = context.getArgByIndex(0);
         
-        this.logger.verbose(`request ${method}, ${url}, ${JSON.stringify(body)}`)
+        const now = Date.now()
         return next
-        .handle()
-        .pipe(
-            tap((res) => this.logger.log(`${JSON.stringify(res)}`)),
-        );
+            .handle()
+            .pipe(
+                tap(() => console.log(Date.now() - now)),
+            );
     }
 }
