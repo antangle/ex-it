@@ -273,13 +273,13 @@ export class RoomService {
         }
     }
 
-    async getHostAndSpeaker(roomId: number, queryRunner?: QueryRunner): Promise<any[]>{
-        const roomJoinRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomJoinRepository) : this.roomJoinRepository;
+    async getHostAndSpeaker(roomId: number, queryRunner?: QueryRunner): Promise<any>{
+        const roomRepository = queryRunner ? queryRunner.manager.getCustomRepository(RoomRepository) : this.roomRepository;
         try{
-            const roomjoins = await roomJoinRepository.getHostAndSpeaker(roomId);
-            if(!roomjoins || roomjoins.length == 0) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_HOST_AND_SPEAKER_ERROR_CODE);
+            const room = await roomRepository.findHostAndSpeakerId(roomId);
+            if(!room) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_HOST_AND_SPEAKER_ERROR_CODE);
 
-            return roomjoins;
+            return room;
         } catch(err){
             if(err instanceof NotExistsException) throw err;
             else if(err instanceof TypeORMError) throw new DatabaseException(consts.DATABASE_ERROR, consts.GET_HOST_AND_SPEAKER_ERROR_CODE, err);
@@ -345,10 +345,11 @@ export class RoomService {
             const tags = await roomJoinRepository.getMostUsedTags(userId);
             const reviews = await userRepository.getReviewCount(userId);
             const parsedReviews = await this.utilService.parseReview(reviews);
+            userInfo.connection = +parsedReviews.count;
             return {
                 userInfo: userInfo,
                 usedTags: this.parseTags(tags),
-                reviews: parsedReviews,
+                reviews: parsedReviews.review,
             }
         } catch(err){
             if(err instanceof DatabaseException) throw err;

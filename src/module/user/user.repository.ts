@@ -31,7 +31,6 @@ export class UserRepository extends Repository<User> {
             .addSelect([
                 'room_agg.total_time::integer', 
                 'room_agg.total_call::integer', 
-                'room_agg.connection::integer'
             ])
             .leftJoin((qb) => {
                 return qb.subQuery()
@@ -39,7 +38,6 @@ export class UserRepository extends Repository<User> {
                     .addSelect([
                         'SUM(room_join.total_time) AS total_time', 
                         'SUM(room_join.call_time) AS total_call',
-                        'COUNT(room_join.id) AS connection'
                     ])
                     .from(User, 'user')
                     .where('room_join.status IN (:...status)')

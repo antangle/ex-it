@@ -119,7 +119,7 @@ export class RoomRepository extends Repository<Room> {
     }
 
     async guestCount(roomId: number){
-        return this.createQueryBuilder('room')
+        return await this.createQueryBuilder('room')
             .select('COUNT(room_join.*) AS count')
             .where('room.id = :roomId', {roomId: roomId})
             .andWhere('room_join.status = :status', {status : "guest"})
@@ -127,4 +127,15 @@ export class RoomRepository extends Repository<Room> {
             .groupBy('room_join.roomId')
             .getRawOne()
     }
+
+    async findHostAndSpeakerId(roomId: number){
+        return await this.createQueryBuilder('room')
+            .select('room.speakerId AS speaker_id')
+            .addSelect('room_join.userId AS host_id')
+            .where('room.id = :roomId', {roomId: roomId})
+            .andWhere('room_join.status =:status')
+            .setParameter('status', consts.HOST)
+            .innerJoin('room.room_join', 'room_join')
+            .getRawOne()
+        }
 }

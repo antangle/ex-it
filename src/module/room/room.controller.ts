@@ -175,14 +175,11 @@ export class RoomController {
     @AuthToken() tokens: Tokens,
     @TransactionQueryRunner() queryRunner: QueryRunner
   ){
+
     const roomId = userInfoDto.room_id;
-    const hostAndSpeaker = await this.roomService.getHostAndSpeaker(roomId);
-
-    const hostUserId = hostAndSpeaker[0].id;
-    const speakerUserId = hostAndSpeaker[0].is_occupied ? hostAndSpeaker[1].id : null;
-
-    this.logger.verbose(`host and speaker: ${JSON.stringify(hostAndSpeaker)}`)
-    this.logger.verbose(hostUserId)
+    const hostAndSpeaker = await this.roomService.getHostAndSpeaker(roomId, queryRunner);
+    const hostUserId = hostAndSpeaker.host_id;
+    const speakerUserId = hostAndSpeaker.speaker_id
 
     const host = await this.roomService.getUserInfo(hostUserId, queryRunner);
     const speaker = speakerUserId ? await this.roomService.getUserInfo(speakerUserId, queryRunner) : null;
@@ -302,9 +299,6 @@ export class RoomController {
     const roomId = makeReviewDto.room_id;
     let fellowStatus = makeReviewDto.status == Status.HOST? Status.SPEAKER : Status.HOST;
     const fellowId = await this.roomService.getUserIdFromStatus(roomId, fellowStatus, queryRunner);
-
-    console.log(makeReviewDto)
-    console.log(`user: ${user.id}, fellow: ${fellowId}`)
 
     const updateRoomJoinDto: UpdateRoomJoinDto = {
       total_time: makeReviewDto.total_time,
@@ -455,7 +449,6 @@ export class RoomController {
   ){
     await this.redisService.removeRoomKey(findPeerDto.roomname);
     const peers = await this.redisService.getRoomPeerCache(findPeerDto.roomname);
-    console.log(`after exit: ${findPeerDto.roomname}\n ${peers}`)
     return makeApiResponse(HttpStatus.OK, {tokens});
   }
 }

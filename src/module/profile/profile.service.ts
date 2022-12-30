@@ -1,3 +1,4 @@
+import { UtilService } from './../util/util.service';
 import { ReviewMapper } from './../../entities/reviewMapper.entity';
 import { NotExistsException } from 'src/exception/not-exist.exception';
 import { UnhandledException } from './../../exception/unhandled.exception';
@@ -13,6 +14,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 export class ProfileService {
     constructor(
         private userRepository: UserRepository,
+        private utilService: UtilService,
         @InjectRepository(ReviewMapper)
         private reviewMapperRepository: Repository<ReviewMapper>,
     ){}
@@ -22,6 +24,9 @@ export class ProfileService {
         try{
             const user = await userRepository.getProfileQuery(userId);
             if(!user) throw new NotExistsException(consts.TARGET_NOT_EXIST, consts.GET_SETTING_INFO_ERROR_CODE);
+            const reviews = await userRepository.getReviewCount(userId);
+            const parsedReviews = await this.utilService.parseReview(reviews);
+            user.connection = +parsedReviews.count;
             return user;
         } catch(err){
             if(err instanceof NotExistsException) throw err;

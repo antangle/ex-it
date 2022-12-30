@@ -54,7 +54,7 @@ export class ProfileController {
     const reviewData = await this.utilService.parseReview(reviews);
     const result = {
       nickname: reviews[0].nickname,
-      reviews: reviewData
+      reviews: reviewData.review
     }
     return makeApiResponse(HttpStatus.OK, {...result, tokens});
   }
