@@ -17,10 +17,10 @@ export class Tag {
     @ApiProperty({
         description: '태그 명'
     })
-    @Index()
-    @Column({
+    @Index({
         unique: true
     })
+    @Column()
     name?: string;
     
     @ApiHideProperty()

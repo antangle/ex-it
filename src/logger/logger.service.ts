@@ -50,12 +50,14 @@ export class DataLoggingService {
         this.log(data);
     }
     
-    signin(user: AuthorizedUser | User, type: string = consts.LOCAL){
+    signin(user: AuthorizedUser | User, type: string = consts.LOCAL, birth: null | string = null, sex: null | string = null){
         const data = {
             user_id: user.id,
             event_name: this.signin.name,
             nickname: user.nickname,
-            login_type: type
+            login_type: type,
+            birth: birth,
+            sex: sex,
         };
         this.log(data);
     }
@@ -103,9 +105,9 @@ export class DataLoggingService {
         this.log(data);
     }
 
-    keyword(user: AuthorizedUser, room: Room, roomTags: RoomTag[]){
+    tag(user: AuthorizedUser, room: Room, roomTags: RoomTag[]){
         const data = {
-            event_name: this.keyword.name,
+            event_name: this.tag.name,
             user_id: user.id,
             nickname: user.nickname,
             room_id: room.id,
@@ -114,11 +116,12 @@ export class DataLoggingService {
         this.log(data);
     }
 
-    review(user: AuthorizedUser, ){
+    review(user: AuthorizedUser, callTime: number){
         const data = {
-            event_name: this.keyword.name,
+            event_name: this.review.name,
             user_id: user.id,
             nickname: user.nickname,
+            call_time: callTime
         };
         this.log(data);
 

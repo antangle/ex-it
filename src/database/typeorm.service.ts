@@ -27,7 +27,7 @@ export class TypeOrmConfig implements TypeOrmOptionsFactory {
             poolErrorHandler: this.onError,
             extra: {
                 //TODO: poolsize 조정
-                poolSize: 50,
+                poolSize: 30,
                 connectionTimeoutMillis: 3000,
             },
             maxQueryExecutionTime: 1000,

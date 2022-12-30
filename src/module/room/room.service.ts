@@ -18,7 +18,7 @@ import { UserRepository } from './../user/user.repository';
 import { User } from './../../entities/user.entity';
 import { UnhandledException } from './../../exception/unhandled.exception';
 import { DatabaseException } from './../../exception/database.exception';
-import { Repository, InsertResult, TypeORMError, OptimisticLockVersionMismatchError } from 'typeorm';
+import { Repository, InsertResult, TypeORMError, OptimisticLockVersionMismatchError, In } from 'typeorm';
 import { Tag } from './../../entities/tag.entity';
 import { QueryRunner } from 'typeorm';
 import { Inject, Injectable, Logger } from '@nestjs/common';
@@ -148,12 +148,18 @@ export class RoomService {
     }
 
     async getTagNames(tags: Set<number>, queryRunner?: QueryRunner){
-        const roomTagRepository = queryRunner ? queryRunner.manager.getRepository(RoomTag) : this.roomTagRepository;
+        const tagRepository = queryRunner ? queryRunner.manager.getRepository(Tag) : this.tagRepository;
         try{
-            return await roomTagRepository.createQueryBuilder('room_tag')
-                .select('room_tag.name')
-                .where('room_tag.id IN (:...tags)', tags)
-                .getRawMany();
+            const tagNames = await tagRepository.find({
+                where: {
+                    name: In(Array.from(tags))
+                }
+            })
+            const data = [];
+            if(tagNames){
+                tagNames.forEach(x => data.push(x.name))
+            }
+            return data;
         } catch(err){
             if(err instanceof TypeORMError) throw new DatabaseException(consts.INSERT_FAILED, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);
             else throw new UnhandledException(this.saveRoomTags.name, consts.SAVE_ROOM_TAGS_ERROR_CODE, err);

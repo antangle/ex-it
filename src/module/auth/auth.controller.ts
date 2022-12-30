@@ -233,7 +233,9 @@ export class AuthController {
             email, 
             terms, 
             personal_info_terms, 
-            oauth_refresh_token 
+            oauth_refresh_token,
+            sex,
+            birth,
         } = oAuthSignInDto;
 
         
@@ -247,6 +249,8 @@ export class AuthController {
         if(!user) {
             const createUserDto: CreateUserDto = {
                 nickname: await this.authService.getRandomNickname(),
+                sex: sex,
+                birth: birth,
                 email: email,
                 terms: terms,
                 personal_info_terms: personal_info_terms,
@@ -269,7 +273,7 @@ export class AuthController {
         const tokens = await this.authService.signIn(user, type, queryRunner);
 
         //log data at the end of api
-        this.dataLoggingService.signin(user, type);
+        this.dataLoggingService.signin(user, type, birth, sex);
 
         return makeApiResponse(HttpStatus.OK, {tokens, nickname: nickname});
     }

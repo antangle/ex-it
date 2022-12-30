@@ -1,6 +1,6 @@
 import { OauthType } from './../../../consts/enum';
 import { ApiProperty } from "@nestjs/swagger";
-import { IsBoolean, IsEmail, IsEnum, IsString } from "class-validator";
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString } from "class-validator";
 
 export class OAuthSignInDto {
 
@@ -23,6 +23,20 @@ export class OAuthSignInDto {
     })
     @IsString()
     oauth_access_token?: string;
+
+    @ApiProperty({
+        description: '성별'
+    })
+    @IsString()
+    @IsOptional()
+    sex?: string = null;
+
+    @ApiProperty({
+        description: '생년월일'
+    })
+    @IsString()
+    @IsOptional()
+    birth?: string = null;
 
     @ApiProperty({
         description: '소셜로그인 refresh_token'

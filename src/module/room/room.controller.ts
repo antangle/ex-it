@@ -130,10 +130,10 @@ export class RoomController {
     const roomJoinDto = this.roomService.makeRoomJoinDto({id: roomId}, createUser, Status.HOST);
     await this.roomService.joinRoom(roomJoinDto, queryRunner);
 
-    //await this.roomService.getTagNames(tagSet);
+    const tagNames = await this.roomService.getTagNames(tagSet, queryRunner);
 
     this.dataLoggingService.room_create(user, room)
-    this.dataLoggingService.keyword(user, room, roomTags)
+    this.dataLoggingService.tag(user, room, tagNames)
 
     return makeApiResponse(HttpStatus.OK, {roomname, tokens});
   }
@@ -236,7 +236,8 @@ export class RoomController {
     await this.redisService.removeRoomPeerCache({roomname, peerId, nickname, status})
     const updateRoomDto: UpdateRoomDto = {
       is_occupied: null,
-      is_online: roomEndDto.continue
+      is_online: roomEndDto.continue,
+      speakerId: null
     }
 
     if(roomEndDto.status == Status.HOST){
@@ -246,8 +247,10 @@ export class RoomController {
         await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
       }
     }
-    if(roomEndDto.status == Status.SPEAKER){
-      delete updateRoomDto.is_online;
+    else if(roomEndDto.status == Status.SPEAKER){
+      if(roomEndDto.continue){
+        delete updateRoomDto.is_online;
+      }
       await this.roomService.updateRoomOnline(roomId, updateRoomDto, queryRunner);
     }
 /*       if(roomEndDto.status != Status.GUEST){
@@ -316,6 +319,7 @@ export class RoomController {
       const review = this.roomService.makeReview(makeReviewDto, fellowId);
       await this.roomService.createReview(review, queryRunner);  
       await this.roomService.updateRoomJoin(user.id, roomId, makeReviewDto.status, updateRoomJoinDto, queryRunner);
+      this.dataLoggingService.review(user, makeReviewDto.call_time);
     }
 
     return makeApiResponse(HttpStatus.OK, {tokens});
@@ -407,7 +411,8 @@ export class RoomController {
 
     if(status == Status.SPEAKER){
       const updateRoomDto: UpdateRoomDto = {
-        is_occupied: new Date()
+        is_occupied: new Date(),
+        speakerId: user.id
       };
       await this.roomService.updateRoomOccupiedLock(roomId, joinRoomDto.version, updateRoomDto, queryRunner);
 

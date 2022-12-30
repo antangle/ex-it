@@ -30,6 +30,20 @@ export class CreateUserDto {
     nickname?: string;
 
     @ApiProperty({
+        description: '성별'
+    })
+    @IsString()
+    @IsOptional()
+    sex?: string = null;
+
+    @ApiProperty({
+        description: '생년월일'
+    })
+    @IsString()
+    @IsOptional()
+    birth?: string = null;
+
+    @ApiProperty({
         default: true,
         description: '이용약관'
     })

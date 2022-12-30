@@ -34,6 +34,11 @@ export class Room {
   })
   roomname?: string;
 
+  @Column({
+    nullable: true
+  })
+  speakerId?: number;
+
   @Column()
   nickname?: string;
 
